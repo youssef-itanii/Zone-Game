@@ -1,0 +1,3 @@
+#!/bin/sh
+CP="bin/classes"
+exec java -enableassertions -cp "$CP" manager.Main "$@"

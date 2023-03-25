@@ -1,0 +1,48 @@
+<project name="Zone" basedir="." default="build">
+
+  <property name="proj_dir" value="."/>
+  <property name="src" value="${proj_dir}/src"/>
+  <property name="build" value = "${proj_dir}/bin"/>
+  <property name="Server-Class" value = "bin.server.Main"/>
+  <property name="Client-Class" value = "bin.client.Main"/>	
+  <target name="clean">
+    <delete dir="${build}"/>
+  </target>
+  
+  <target name="compile">
+    <mkdir dir="${build}/classes"/>
+    <javac srcdir="${src}" destdir="${build}/classes">
+    </javac>
+  	
+  </target>
+	
+	<target name="jar" depends="compile">
+		<mkdir dir="bin/jar"/>
+		<jar destfile="${build}/jar/Server.jar" basedir="${build}/classes">
+			<manifest>
+				<attribute name="Main-Class" value="${Server-Class}"/>
+			</manifest>
+		
+		</jar>
+		
+		<jar destfile="${build}/jar/Client.jar" basedir="${build}/classes">
+			<manifest>
+				<attribute name="Main-Class" value="${Client-Class}"/>
+			</manifest>
+
+		</jar>
+
+
+	</target>
+
+   <target name="run_server" depends="jar">
+    <java jar="${build}/jar/Server.jar" fork="true">
+    </java>
+   </target>
+
+
+  <target name="build" depends="clean,jar">
+    <echo message="Build Complete" />
+  </target>
+	
+</project>
