@@ -19,31 +19,38 @@ public class Client implements IClient{
 	private IManager manager;
 	private IZone zone;
 	
-	public void User() {
+	public Client() {
 		try {
 			UnicastRemoteObject.exportObject(this , 0);
+	 
 		}
 		catch(RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to register user", true);
+			e.printStackTrace();
+			CLIMessage.DisplayMessage("Unable to export user object", true);
 		}
+	
 	}
 	
 	public void register() {
 		try {
 			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
-			manager = (IManager) registry.lookup("Manager"); 
+			manager = (IManager) registry.lookup("Manager");
+			CLIMessage.DisplayMessage("Found manager and registered", false);
+			
 			manager.register(this);
 			
 		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to locate registry", true);
+	
+			CLIMessage.DisplayMessage("Unable to register client", true);
 		} catch (NotBoundException e) {
 			CLIMessage.DisplayMessage("Unable to locate Manager in registry", true);
 		}
+
 	}
 	
 	@Override
 	public void setZone(IZone target) throws RemoteException {
-		// TODO Auto-generated method stub
+		zone = target;
 		
 	}
 
@@ -66,8 +73,8 @@ public class Client implements IClient{
 	}
 
 	@Override
-	public void recieveMessage(Message message) {
-		CLIMessage.DisplayMessage(message.message, false);
+	public void recieveMessage(String message) throws RemoteException {
+		CLIMessage.DisplayMessage(message, false);
 		
 	}
 

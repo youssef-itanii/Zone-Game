@@ -13,7 +13,7 @@ public interface IClient extends Remote{
 //	Response sayHello() ?
 	void getX() throws RemoteException;
 	void getY() throws RemoteException;
-	void recieveMessage(Message message);
+	void recieveMessage(String message) throws RemoteException;;
 
 	
 }
