@@ -22,6 +22,13 @@ public class Manager implements IManager {
 	private int MAX_ZONES = 4;
 	private ArrayList<IZone> zones;
 	
+	//=========================================================================
+	
+	/***
+	 * Constructor for Manager
+	 * Creates the registry, binds itself, and exports itself as a remote object
+	 * Init array for clients
+	 */
 	public Manager() {
 		try {
 
@@ -39,6 +46,10 @@ public class Manager implements IManager {
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
 	}
+	
+	/***
+	 * Register new client
+	 */
 	@Override
 	public void register(IClient client){
 
@@ -51,10 +62,18 @@ public class Manager implements IManager {
 		
 	}
 
+	/***
+	 * Register new zone 
+	 */
 	@Override
 	public void register(IZone zone) throws RemoteException {
+		if(registeredZones == MAX_ZONES) {
+			return;
+		}
 		//Add more logic here
 		zones.add(zone);
+		registeredZones++;
+		
 		
 	}
 	//===============================CLIENT REMOVAL==========================================
@@ -70,21 +89,50 @@ public class Manager implements IManager {
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
 	}
 	//=======================================================================================
+	
+	/***
+	 * Moves the client from one zone to another based on the coordinates processed by the previous zone. 
+	 * @param client This is the client to move
+	 * @param caller Zone that requested moving the client
+	 * @param dest Destination zone
+	 * @param x x coordinate
+	 * @param y y coordinate
+	 * @return boolean Returns whether the player can move or not
+	 */
 	@Override
 	public boolean  moveClient(IClient client, IZone caller ,IZone dest , int x , int y) throws RemoteException {
-		// TODO Auto-generated method stub
+
 		if(dest.playerCanMove(x, y)) {
-			
+			dest.updateCoordinates(client, x , y);
 			return true;
 		}
 		
-			caller.recieveMessage("Cannot move player to that zone");
-			return false;
-		
-		
-		
+		caller.recieveMessage("Cannot move player to that zone");
+		return false;	
 	}
-
+	/***
+	 * Moves the client to a zone based on their request upon registration
+	 * @param client This is the client to move
+	 * @param zoneID Zone ID
+	 * @return boolean Returns whether the player can be placed or not
+	 */
+	@Override
+	public boolean moveClient(IClient client, int zoneID) {
+		
+		IZone selectedZone = zones.get(zoneID);
+		try {
+			selectedZone.register(client);
+		}
+		catch(RemoteException e) {
+			sendMessage(client, "Unable to register to zone");
+			CLIMessage.DisplayMessage("Unable to register client to zone", false);
+		}
+		return false;	
+	}
+	//=======================================================================================
+	/***
+	 * Send message to target client
+	 */
 	@Override
 	public void sendMessage(IClient client, String message) {
 		
@@ -97,18 +145,6 @@ public class Manager implements IManager {
 		}
 		
 	}
-	@Override
-	public boolean moveClient(IClient client, int zoneID) {
-		IZone selectedZone = zones.get(zoneID);
-		try {
-			selectedZone.register(client);
-		}
-		catch(RemoteException e) {
-			sendMessage(client, "Unable to register to zone");
-			CLIMessage.DisplayMessage("Unable to register client to zone", false);
-		}
-		
-		
-	}
+
 
 }
