@@ -9,6 +9,7 @@ import java.rmi.server.UnicastRemoteObject;
 import manager.Manager;
 import shared.common.CLIMessage;
 import shared.common.Message;
+import shared.common.Player;
 import shared.remote_objects.IClient;
 import shared.remote_objects.IManager;
 import shared.remote_objects.IZone;
@@ -18,11 +19,12 @@ public class Client implements IClient{
 
 	private IManager manager;
 	private IZone zone;
+	private Player player;
 	
-	public Client() {
+	public Client(Player player) {
 		try {
 			UnicastRemoteObject.exportObject(this , 0);
-	 
+			this.player = player;
 		}
 		catch(RemoteException e) {
 			e.printStackTrace();
@@ -76,6 +78,26 @@ public class Client implements IClient{
 	public void recieveMessage(String message) throws RemoteException {
 		CLIMessage.DisplayMessage(message, false);
 		
+	}
+
+	@Override
+	public void recieveUpdatedMap(String map) throws RemoteException {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	
+	public String requestMovement(Player.Direction direction) {
+		try {
+			if(zone.playerCanMove(direction)) {
+				return zone.updateCoordinates(this, direction);
+			}
+		
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to request coordinates update", false);
+		}
+		
+		return "";
 	}
 
 }

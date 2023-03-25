@@ -4,14 +4,16 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import shared.common.Movement;
+import shared.common.Player;
 
 
 public interface IZone extends Remote{
 	void register(IClient client) throws RemoteException;
 	void unregister(IClient client) throws RemoteException;
-	void updateCoordinates(IClient client, Movement.Direction direction) throws RemoteException;
-	void updateCoordinates(IClient client,int x , int y) throws RemoteException;
-	boolean playerCanMove(int x , int y);
+	String updateCoordinates(IClient client, Player.Direction direction) throws RemoteException;
+	String updateCoordinates(IClient client,int x , int y) throws RemoteException;
+	boolean playerCanMove(int x , int y)throws RemoteException;
+	boolean playerCanMove(Player.Direction direction) throws RemoteException;
 	void recieveMessage(String message) throws RemoteException;
 
 	
