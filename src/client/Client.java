@@ -1,25 +1,43 @@
 package client;
 
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 import manager.Manager;
+import shared.common.CLIMessage;
 import shared.common.Message;
 import shared.remote_objects.IClient;
+import shared.remote_objects.IManager;
 import shared.remote_objects.IZone;
 import zone.Zone;
 
 public class Client implements IClient{
 
-	private Manager connection;
-	private Zone subscribedZone;
+	private IManager manager;
+	private IZone zone;
 	
 	public void User() {
 		try {
 			UnicastRemoteObject.exportObject(this , 0);
 		}
 		catch(RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to register user", true);
+		}
+	}
+	
+	public void register() {
+		try {
+			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
+			manager = (IManager) registry.lookup("Manager"); 
+			manager.register(this);
 			
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to locate registry", true);
+		} catch (NotBoundException e) {
+			CLIMessage.DisplayMessage("Unable to locate Manager in registry", true);
 		}
 	}
 	
@@ -49,7 +67,7 @@ public class Client implements IClient{
 
 	@Override
 	public void recieveMessage(Message message) {
-		// TODO Auto-generated method stub
+		CLIMessage.DisplayMessage(message.message, false);
 		
 	}
 

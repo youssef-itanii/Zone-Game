@@ -2,10 +2,10 @@ package shared.common;
 
 public class Message {
 	public String author;
-	public String message;
+	public String content;
 	
-	public Message(String message, String author) {
-		this.message = message;
+	public Message(String content, String author) {
+		this.content = content;
 		this.author = author;
 	}
 	
