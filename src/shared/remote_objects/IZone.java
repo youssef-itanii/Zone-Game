@@ -3,7 +3,6 @@ package shared.remote_objects;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import shared.common.Movement;
 import shared.common.Player;
 
 

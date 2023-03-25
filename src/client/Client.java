@@ -99,5 +99,17 @@ public class Client implements IClient{
 		
 		return "";
 	}
+	
+	public void unregister() {
+		try {
+			manager.unregister(this);
+			
+		} catch (RemoteException e) {
+	
+			CLIMessage.DisplayMessage("Unable to unregister client", true);
+		
+		
+		}
+	}
 
 }
