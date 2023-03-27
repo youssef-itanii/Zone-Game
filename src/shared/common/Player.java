@@ -24,9 +24,32 @@ public class Player {
 	
 	public int zoneID = -1;
 	String map = "0 0 0 0 0 0 0 0 0 0  = 0 0 0 0 0 P 0 0 0 0 = 0 0 P 0 0 0 0 0 0 0 = 0 0 0 0 0 0 0 0 P 0 = 0 0 0 0 0 0 0 P 0 0";
-	
+	private Scanner scanner;
 	private Client client;
 	
+	
+	public void start() {
+		clearScreen();
+		
+		//Request selection of zone
+		requestAvaialableZones();
+		
+		//Display map of zone you are registered too
+		displayMap();
+		
+		//Take in movement input
+		scanner = new Scanner(System.in);
+		String input = "";
+		while(!input.equals("exit")) {
+			System.out.println("Enter direction to move");
+			 input = scanner.nextLine();  // Read user input
+			 boolean moved = move(input);
+			 if(moved) displayMap();
+			 else {
+				 System.out.println("\u001B[31mInvalid input: Try again.\u001B[0m");
+			 }
+		}
+	}
 	public void setClient(Client client) {
 		this.client = client;
 	}
@@ -38,10 +61,11 @@ public class Player {
 
 	public void logout() {
 		client.unregister();
+		scanner.close();
 		System.exit(0);
 	}
 	
-	public void move(String input) {
+	public boolean move(String input) {
 		Direction direction;
 		int future_x = x;
 		int future_y = y;
@@ -63,14 +87,16 @@ public class Player {
 				future_x = x + 1;
 				break;
 			default:
-				return;
+				return false;
 		}
 //		String mapResp = client.requestMovement(direction);
 //		if(!mapResp.equals("")) {
 //			map = mapResp;
 			x = future_x;
 			y = future_y;
+			
 //		}
+			return true;
 	}
 	
 	public void displayMap() {
@@ -105,8 +131,7 @@ public class Player {
 			}
 			mapToDisplay+="\n";
 		}
-		System.out.print("\033[H\033[2J");  
-		System.out.flush();  
+		clearScreen();
 		System.out.println("\u001B[1;92m====================  ZONE "+zoneID+"  ====================\u001B[0m");
 		System.out.println("\u001B[1;92m====================  YOUR ID: "+client.ID+"  ====================\u001B[0m");
 		System.out.println(mapToDisplay);
@@ -132,8 +157,8 @@ public class Player {
 	
 	public void startZoneSelection(String message) {
 		System.out.println(message);
+		scanner  = new Scanner(System.in);
 		
-		Scanner scanner = new Scanner(System.in);
 		int input = -1;
 		while(zoneID == -1 && input!=-2) {
 			System.out.print("Enter the zone ID: ");
@@ -149,8 +174,8 @@ public class Player {
 			System.exit(0);
 		}
 		
-		CLIMessage.DisplayMessage("Registered to zone "+zoneID, false);
-		CLIMessage.DisplayMessage("Starting game... ", false);
+		CLIMessage.DisplayMessage("\n\u001B[1;92mRegistered to zone "+zoneID+"\u001B[0m", false);
+		CLIMessage.DisplayMessage("\u001B[1;92mStarting game... \u001B[0m", false);
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
@@ -158,5 +183,10 @@ public class Player {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	private void clearScreen() {
+		System.out.print("\033[H\033[2J");  
+		System.out.flush();
 	}
 }
