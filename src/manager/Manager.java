@@ -43,6 +43,7 @@ public class Manager implements IManager {
 		} catch (AlreadyBoundException e) {
 			CLIMessage.DisplayMessage("Manager is already bound", true);;
 		}
+		zones = new ArrayList<>();
 		
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
@@ -60,6 +61,9 @@ public class Manager implements IManager {
 		
 		sendMessage(client , message.toString());
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
+//		
+	
+
 		return connectedClients.size();
 		
 	}
@@ -118,20 +122,21 @@ public class Manager implements IManager {
 	 * Moves the client to a zone based on their request upon registration
 	 * @param client This is the client to move
 	 * @param zoneID Zone ID
-	 * @return boolean Returns whether the player can be placed or not
+	 * @return int Returns whether the player can be placed or not
 	 */
 	@Override
-	public boolean moveClient(IClient client, int zoneID) {
-		
-		IZone selectedZone = zones.get(zoneID);
-		try {
-			selectedZone.register(client);
-		}
-		catch(RemoteException e) {
-			sendMessage(client, "Unable to register to zone");
-			CLIMessage.DisplayMessage("Unable to register client to zone", false);
-		}
-		return false;	
+	public int setZone(IClient client, int zoneID) {
+		return zoneID;
+//		try {
+//			IZone selectedZone = zones.get(zoneID);
+//			selectedZone.register(client);
+//			return zoneID;
+//		}
+//		catch(RemoteException e) {
+//			sendMessage(client, "Unable to register to zone");
+//			CLIMessage.DisplayMessage("Unable to register client to zone", false);
+//		}
+//		return -1;	
 	}
 	//=======================================================================================
 	/***
@@ -148,6 +153,16 @@ public class Manager implements IManager {
 			CLIMessage.DisplayMessage("Unable to send message to client", false);
 		}
 		
+	}
+
+	@Override
+	public String getAvaialbeZones() throws RemoteException {
+		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
+				+ "Please select a zone number from the following range\n"
+				+ "Zones available: " + zones.size() + "\n"
+				+ "Range: 0 - "+(zones.size()));
+		
+		return zoneSelectionMessage.toString();
 	}
 
 

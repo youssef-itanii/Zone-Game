@@ -20,6 +20,7 @@ public class Client implements IClient{
 	private IManager manager;
 	private IZone zone;
 	private Player player;
+	public int ID;
 	
 	public Client(Player player) {
 		try {
@@ -39,8 +40,8 @@ public class Client implements IClient{
 			manager = (IManager) registry.lookup("Manager");
 			CLIMessage.DisplayMessage("Found manager and registered", false);
 			
-			int ID = manager.register(this);
-			
+			ID = manager.register(this);
+			CLIMessage.DisplayMessage("GOT ID "+ID, false);			
 		} catch (RemoteException e) {
 	
 			CLIMessage.DisplayMessage("Unable to register client", true);
@@ -76,7 +77,8 @@ public class Client implements IClient{
 
 	@Override
 	public void recieveMessage(String message) throws RemoteException {
-		CLIMessage.DisplayMessage(message, false);
+		player.processMessage(message);
+		
 		
 	}
 
@@ -110,6 +112,25 @@ public class Client implements IClient{
 		
 		
 		}
+	}
+
+
+	
+	public int registerToZone(int id) {
+		try {
+			return manager.setZone(this, id);
+		} catch (RemoteException e) {
+			return -1;
+		}
+	}
+	public String requestAvaialableZones() {
+		try {
+			return manager.getAvaialbeZones();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			CLIMessage.DisplayMessage("Unable to retrieve zones", true);
+		}
+		return "";
 	}
 
 }

@@ -10,6 +10,7 @@ public interface IManager extends Remote{
 	int register(IZone zone) throws RemoteException;
 	void unregister(IClient client) throws RemoteException;
 	boolean moveClient(IClient client, IZone caller, IZone dest, int x , int y) throws RemoteException;
-	boolean moveClient(IClient client, int zoneID) throws RemoteException;
+	int setZone(IClient client, int zoneID) throws RemoteException;
 	void sendMessage(IClient client , String message) throws RemoteException;
+	String getAvaialbeZones() throws RemoteException;
 }
