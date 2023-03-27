@@ -22,6 +22,7 @@ public class Manager implements IManager {
 	private int MAX_ZONES = 4;
 	private ArrayList<IZone> zones;
 	
+	
 	//=========================================================================
 	
 	/***
@@ -51,7 +52,7 @@ public class Manager implements IManager {
 	 * Register new client
 	 */
 	@Override
-	public void register(IClient client){
+	public int register(IClient client){
 
 		connectedClients.add(client);
 		Message message = new Message("Manager" , "Welcome!");
@@ -59,6 +60,7 @@ public class Manager implements IManager {
 		
 		sendMessage(client , message.toString());
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
+		return connectedClients.size();
 		
 	}
 
@@ -66,14 +68,16 @@ public class Manager implements IManager {
 	 * Register new zone 
 	 */
 	@Override
-	public void register(IZone zone) throws RemoteException {
+	public int register(IZone zone) throws RemoteException {
 		if(registeredZones == MAX_ZONES) {
-			return;
+			//Notify fail due to max capacity
+			return -1;
 		}
-		//Add more logic here
-		zones.add(zone);
-		registeredZones++;
 		
+		zones.add(zone);
+		//Send ID
+		registeredZones++;
+		return registeredZones;
 		
 	}
 	//===============================CLIENT REMOVAL==========================================

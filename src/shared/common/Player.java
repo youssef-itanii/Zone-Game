@@ -21,7 +21,7 @@ public class Player {
 	public int y = 0;
 	String map = "0 0 0 0 0 0 0 0 0 0  = 0 0 0 0 0 P 0 0 0 0 = 0 0 P 0 0 0 0 0 0 0 = 0 0 0 0 0 0 0 0 P 0 = 0 0 0 0 0 0 0 P 0 0";
 	
-	public Client client;
+	private Client client;
 	
 	public void setClient(Client client) {
 		this.client = client;

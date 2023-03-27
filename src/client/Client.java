@@ -39,7 +39,7 @@ public class Client implements IClient{
 			manager = (IManager) registry.lookup("Manager");
 			CLIMessage.DisplayMessage("Found manager and registered", false);
 			
-			manager.register(this);
+			int ID = manager.register(this);
 			
 		} catch (RemoteException e) {
 	
