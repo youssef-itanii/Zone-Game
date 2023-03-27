@@ -15,6 +15,8 @@ import shared.remote_objects.IManager;
 import shared.remote_objects.IZone;
 
 
+
+
 public class Manager implements IManager {
 
 	private List<IClient> connectedClients = null;
@@ -52,14 +54,16 @@ public class Manager implements IManager {
 	 * Register new client
 	 */
 	@Override
-	public int register(IClient client){
-
+	public int register(IClient client, int zoneID){
 		connectedClients.add(client);
 		Message message = new Message("Manager" , "Welcome!");
 		CLIMessage.DisplayMessage("New user registered", false);
 		
 		sendMessage(client , message.toString());
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
+
+		zones.get(zoneID).register(client);
+
 		return connectedClients.size();
 		
 	}
@@ -104,7 +108,7 @@ public class Manager implements IManager {
 	 * @return boolean Returns whether the player can move or not
 	 */
 	@Override
-	public boolean  moveClient(IClient client, IZone caller ,IZone dest , int x , int y) throws RemoteException {
+	public boolean moveClient(IClient client, IZone caller ,IZone dest , int x , int y) throws RemoteException {
 
 		if(dest.playerCanMove(x, y)) {
 			dest.updateCoordinates(client, x , y);

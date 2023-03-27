@@ -15,6 +15,9 @@ import shared.remote_objects.IManager;
 import shared.remote_objects.IZone;
 import zone.Zone;
 
+import java.util.Random;
+
+
 public class Client implements IClient{
 
 	private IManager manager;
@@ -38,8 +41,18 @@ public class Client implements IClient{
 			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
 			manager = (IManager) registry.lookup("Manager");
 			CLIMessage.DisplayMessage("Found manager and registered", false);
-			
-			int ID = manager.register(this);
+
+
+			int randomZone = rand.nextInt(4) + 1; // TODO: Ask input from user
+
+			StringBuilder sb = new StringBuilder("Zone-");
+			sb.insert(5, String.valueOf(randomZone));
+
+			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
+			zone = (IZone) registry.lookup(sb.toString());
+			setZone(zone);
+
+			int ID = manager.register(this, randomZone);
 			
 		} catch (RemoteException e) {
 	
