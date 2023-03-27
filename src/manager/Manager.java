@@ -53,15 +53,15 @@ public class Manager implements IManager {
 	 */
 	@Override
 	public int register(IClient client){
-
 		connectedClients.add(client);
 		Message message = new Message("Manager" , "Welcome!");
 		CLIMessage.DisplayMessage("New user registered", false);
-		
+
 		sendMessage(client , message.toString());
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
+
+		zones.get(zoneID).register(client);
 		return connectedClients.size();
-		
 	}
 
 	/***

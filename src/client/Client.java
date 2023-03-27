@@ -38,11 +38,20 @@ public class Client implements IClient{
 			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
 			manager = (IManager) registry.lookup("Manager");
 			CLIMessage.DisplayMessage("Found manager and registered", false);
-			
-			int ID = manager.register(this);
+
+
+			int randomZone = rand.nextInt(4) + 1; // TODO: Ask input from user
+
+			StringBuilder sb = new StringBuilder("Zone-");
+			sb.insert(5, String.valueOf(randomZone));
+
+			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
+			zone = (IZone) registry.lookup(sb.toString());
+			setZone(zone);
+
+			int ID = manager.register(this, randomZone);
 			
 		} catch (RemoteException e) {
-	
 			CLIMessage.DisplayMessage("Unable to register client", true);
 		} catch (NotBoundException e) {
 			CLIMessage.DisplayMessage("Unable to locate Manager in registry", true);
