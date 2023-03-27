@@ -107,8 +107,8 @@ public class Player {
 		}
 		System.out.print("\033[H\033[2J");  
 		System.out.flush();  
-		System.out.println("\u001B[1;31m====================  ZONE "+zoneID+"  ====================\u001B[0m");
-		System.out.println("\u001B[1;31m====================  YOUR ID: "+client.ID+"  ====================\u001B[0m");
+		System.out.println("\u001B[1;92m====================  ZONE "+zoneID+"  ====================\u001B[0m");
+		System.out.println("\u001B[1;92m====================  YOUR ID: "+client.ID+"  ====================\u001B[0m");
 		System.out.println(mapToDisplay);
 		
 	}
