@@ -55,7 +55,6 @@ public class Client implements IClient{
 			int ID = manager.register(this, randomZone);
 			
 		} catch (RemoteException e) {
-	
 			CLIMessage.DisplayMessage("Unable to register client", true);
 		} catch (NotBoundException e) {
 			CLIMessage.DisplayMessage("Unable to locate Manager in registry", true);
