@@ -21,7 +21,7 @@ public class Player {
 	private String YOU = "\u001B[1;47m\u001B[1;32mU\u001B[0m\u001B[0m";
 	public int x = -1;
 	public int y = -1;
-	String map = "";
+	public String map = "";
 	private Scanner scanner;
 	private Client client;
 	

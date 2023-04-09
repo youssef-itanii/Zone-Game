@@ -272,20 +272,71 @@ public class Zone implements IZone{
 			targetZone.placePlayer(client, row, col); // Move to the new zone
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
+			notifyNeighbors(client);
 			return "";
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to unregister client", false);
 		}
 		return ""; 
     }
-    /**
-     *
-     * | 1 | 2 |
-     * | 3 | 4 |
-     * @param direction
-     * @return
-     * @throws RemoteException
-     */
+
+    
+    private void notifyNeighbors(IClient client) {
+
+//    	List<IClient> neighboringClients = new ArrayList<IClient>();
+//    	int col = -1;
+//		
+//    	int row = -1;
+//		try {
+//			row = client.getY();
+//			col = client.getX();
+//		} catch (RemoteException e) {
+//			CLIMessage.DisplayMessage("Unable to obtain client coordinates", false);
+//		}
+//		if(row - 1 >= 0) {
+//			neighboringClients.add(board[row-1][col]);
+//		}
+// 
+//    	
+//    	if(row + 1 < N) {
+//			neighboringClients.add(board[row+1][col]);
+//    	}
+//    	
+//		if(col - 1 >= 0) {
+//			neighboringClients.add(board[row][col - 1]);
+//		}
+// 
+//    	
+//    	if(col + 1 < N) {
+//			neighboringClients.add(board[row][col+1]);
+//    	}
+//    	
+    	String map = GenerateUpdatedMapString();
+//    	for(IClient neighbor : neighboringClients) {
+//    		if(neighbor == null) continue;
+//    		try {
+//				neighbor.recieveUpdatedMap(map);
+//			} catch (RemoteException e) {
+//				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
+//			}
+//    	}
+    	
+    	for(IClient clientt: clientList) {
+    		try {
+    			clientt.recieveUpdatedMap(map);
+			} catch (RemoteException e) {
+				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
+			}
+    	}
+    	
+    }
+    private String updateBoard(IClient client , int prevRow, int prevCol , int newRow, int newCol) {
+        board[prevRow][prevCol] = null;
+        board[newRow][newCol] = client;
+        notifyNeighbors(client);
+    	return GenerateUpdatedMapString();
+    }
+    
 	@Override
 	public String movePlayer(IClient client, Player.Direction direction) throws RemoteException{
         int xCoordinate = client.getX();
@@ -305,10 +356,9 @@ public class Zone implements IZone{
                     if(!playerCanMove(yUpdated, xCoordinate))
                         return "";
                     else{
-                        board[yCoordinate][xCoordinate] = null;
-                        board[yUpdated][xCoordinate] = client;
+
                         CLIMessage.DisplayMessage("Player moved up", false);
-                        return GenerateUpdatedMapString();
+                        return updateBoard(client , yCoordinate , xCoordinate , yUpdated, xCoordinate);
                     }
                 }
             case DOWN:
@@ -323,10 +373,8 @@ public class Zone implements IZone{
                     if(!playerCanMove(yUpdated, xCoordinate))
                         return "";
                     else{
-                        board[yCoordinate][xCoordinate] = null;
-                        board[yUpdated][xCoordinate] = client;
                         CLIMessage.DisplayMessage("Player moved down", false);
-                        return GenerateUpdatedMapString();
+                        return updateBoard(client , yCoordinate , xCoordinate , yUpdated, xCoordinate);
                     }
                 }
     
@@ -341,10 +389,8 @@ public class Zone implements IZone{
 	                if(!playerCanMove(yCoordinate, xUpdated))
 	                    return "";
 	                else{
-	                    board[yCoordinate][xCoordinate] = null;
-	                    board[yCoordinate][xUpdated] = client;
 	                    CLIMessage.DisplayMessage("Player moved left", false);
-	                    return GenerateUpdatedMapString();
+                        return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
 	                }
                 }
             case RIGHT:
@@ -358,10 +404,8 @@ public class Zone implements IZone{
 	                if(!playerCanMove(yCoordinate, xUpdated))
 	                    return "";
 	                else{
-	                    board[yCoordinate][xCoordinate] = null;
-	                    board[yCoordinate][xUpdated] = client;
 	                    CLIMessage.DisplayMessage("Player moved right", false);
-	                    return GenerateUpdatedMapString();
+                        return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
 	                }
                 }
             default:

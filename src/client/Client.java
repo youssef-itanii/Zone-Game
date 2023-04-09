@@ -88,6 +88,8 @@ public class Client implements IClient{
 	@Override
 	public void recieveUpdatedMap(String map) throws RemoteException {
 		// TODO Auto-generated method stub
+		player.map = map;
+		player.displayMap();
 
 	}
 
