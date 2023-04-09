@@ -272,7 +272,7 @@ public class Zone implements IZone{
 			targetZone.placePlayer(client, row, col); // Move to the new zone
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
-			return ((Zone) targetZone).GenerateUpdatedMapString();
+			return "";
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to unregister client", false);
 		}
