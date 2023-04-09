@@ -13,4 +13,5 @@ public interface IManager extends Remote{
 	int setZone(IClient client, int zoneID) throws RemoteException;
 	void sendMessage(IClient client , String message) throws RemoteException;
 	String getAvaialbeZones() throws RemoteException;
+	IZone getNeighborZone(int row , int col) throws RemoteException;
 }

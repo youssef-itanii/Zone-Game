@@ -14,8 +14,9 @@ public interface IZone extends Remote{
 	String updateCoordinates(IClient client, Player.Direction direction) throws RemoteException;
 	String updateCoordinates(IClient client,int x , int y) throws RemoteException;
 	boolean playerCanMove(int x , int y)throws RemoteException;
-	boolean playerCanMove(Player.Direction direction) throws RemoteException;
+	boolean playerCanMove(IClient client, Player.Direction direction) throws RemoteException;
 	void recieveMessage(String message) throws RemoteException;
+	void setPosition(int x, int y) throws RemoteException;
 
 
 }

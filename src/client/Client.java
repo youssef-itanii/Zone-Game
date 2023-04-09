@@ -21,6 +21,8 @@ public class Client implements IClient{
 	private IZone zone;
 	private Player player;
 	public int ID;
+	private int X;
+	private int Y;
 	
 	public int ID;
 
@@ -61,25 +63,24 @@ public class Client implements IClient{
 
 	@Override
 	public void setCoordinates(int x, int y) throws RemoteException {
-		// TODO Auto-generated method stub
-		
+		X = x;
+		Y = y;
+	}
+
+	@Override
+	public int getX() throws RemoteException {
+		return X;
 
 	}
 
 	@Override
-	public void getX() throws RemoteException {
-		// TODO Auto-generated method stub
+	public int getY() throws RemoteException {
+		return Y;
 
 	}
 
 	@Override
-	public void getY() throws RemoteException {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void recieveMessage(String message) throws RemoteException {
+	public int recieveMessage(String message) throws RemoteException {
 		player.processMessage(message);
 
 

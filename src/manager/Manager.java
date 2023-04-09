@@ -20,7 +20,10 @@ public class Manager implements IManager {
 	private List<IClient> connectedClients = null;
 	private int registeredZones = 0;
 	private int MAX_ZONES = 4;
-	private ArrayList<IZone> zones;
+	private int N = 2;
+	int zoneRow = 0;
+	int zoneCol = 0;
+	IZone[][] zones;
 
 
 	//=========================================================================
@@ -43,7 +46,7 @@ public class Manager implements IManager {
 		} catch (AlreadyBoundException e) {
 			CLIMessage.DisplayMessage("Manager is already bound", true);;
 		}
-		zones = new ArrayList<>();
+		zones = new IZone[N][N];
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
 	}
@@ -72,16 +75,32 @@ public class Manager implements IManager {
 	 */
 	@Override
 	public int register(IZone zone) throws RemoteException {
-		if(registeredZones == MAX_ZONES) {
-			//Notify fail due to max capacity
-			return -1;
+
+		if(zoneCol == N - 1) {
+			zoneCol = 0;
+			zoneRow ++;
+			if(zoneRow == N) {
+				return -1;
+			}
 		}
 
-		zones.add(zone);
-		//Send ID
+		zones[zoneRow][zoneCol] = zone;
+		zoneCol++;
+		//set position in registry
+		zone.setPosition(zoneRow, zoneCol);
 		registeredZones++;
 		return registeredZones;
 
+	}
+	
+	@Override
+	public IZone getNeighborZone(int row, int col) {
+		try {			
+			return zones[row][col];
+		}
+		catch (ArrayIndexOutOfBoundsException ex) {
+			return null;
+		}
 	}
 	//===============================CLIENT REMOVAL==========================================
 	@Override
@@ -158,21 +177,14 @@ public class Manager implements IManager {
 	public String getAvaialbeZones() throws RemoteException {
 		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
 				+ "Please select a zone number from the following range\n"
-				+ "Zones available: " + zones.size() + "\n"
-				+ "Range: 0 - "+(zones.size()));
+				+ "Zones available: " + (N*N) + "\n"
+				+ "Range: 0 - "+(N*N));
 
 		return zoneSelectionMessage.toString();
 	}
 
-	@Override
-	public String getAvaialbeZones() throws RemoteException {
-		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
-				+ "Please select a zone number from the following range\n"
-				+ "Zones available: " + zones.size() + "\n"
-				+ "Range: 0 - "+(zones.size()));
-		
-		return zoneSelectionMessage.toString();
-	}
+
+
 
 
 }

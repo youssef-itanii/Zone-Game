@@ -62,7 +62,7 @@ public class Player {
 				future_x = x + 1;
 				break;
 			default:
-				return false;
+				return;
 		}
 //		String mapResp = client.requestMovement(direction);
 //		if(!mapResp.equals("")) {
