@@ -1,5 +1,6 @@
 package manager;
 
+import java.io.ObjectInputFilter.Config;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -8,6 +9,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import shared.common.AppConfig;
 import shared.common.CLIMessage;
 import shared.common.Message;
 import shared.remote_objects.IClient;
@@ -19,8 +21,8 @@ public class Manager implements IManager {
 
 	private List<IClient> connectedClients = null;
 	private int registeredZones = 0;
-	private int MAX_ZONES = 4;
-	private int N = 2;
+	private int MAX_ZONES;
+	private int N;
 	int zoneRow = 0;
 	int zoneCol = 0;
 	IZone[][] zones;
@@ -46,9 +48,10 @@ public class Manager implements IManager {
 		} catch (AlreadyBoundException e) {
 			CLIMessage.DisplayMessage("Manager is already bound", true);;
 		}
-		zones = new IZone[N][N];
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
+		N = AppConfig.getNumberOfZones();
+		zones = new IZone[N][N];
 	}
 
 	/***
@@ -74,7 +77,7 @@ public class Manager implements IManager {
 	 * Register new zone
 	 */
 	@Override
-	public int register(IZone zone) throws RemoteException {
+	public int register(IZone zone) {
 
 		if(zoneCol == N - 1) {
 			zoneCol = 0;
@@ -84,13 +87,31 @@ public class Manager implements IManager {
 			}
 		}
 
+		//set position in registry
+		try {
+			zone.setPosition(zoneRow, zoneCol);
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to register new zone", false);
+			return -1;
+		}
 		zones[zoneRow][zoneCol] = zone;
 		zoneCol++;
-		//set position in registry
-		zone.setPosition(zoneRow, zoneCol);
 		registeredZones++;
 		return registeredZones;
 
+	}
+	
+	private void prepareAllZones() {
+		for(int i = 0; i < N; i++) {
+			for(int j = 0 ; j < N ; j++) {
+				try {
+					if(zones[i][j] != null)
+					zones[i][j].registerNeighbouringZone();
+				} catch (RemoteException e) {
+					CLIMessage.DisplayMessage("Unable to notify zone to register with neighbors", false);
+				}
+			}
+		}
 	}
 	
 	@Override
@@ -116,26 +137,7 @@ public class Manager implements IManager {
 	}
 	//=======================================================================================
 
-	/***
-	 * Moves the client from one zone to another based on the coordinates processed by the previous zone.
-	 * @param client This is the client to move
-	 * @param caller Zone that requested moving the client
-	 * @param dest Destination zone
-	 * @param x x coordinate
-	 * @param y y coordinate
-	 * @return boolean Returns whether the player can move or not
-	 */
-	@Override
-	public boolean  moveClient(IClient client, IZone caller ,IZone dest , int x , int y) throws RemoteException {
-
-		if(dest.playerCanMove(x, y)) {
-			dest.updateCoordinates(client, x , y);
-			return true;
-		}
-
-		caller.recieveMessage("Cannot move player to that zone");
-		return false;
-	}
+	
 	/***
 	 * Moves the client to a zone based on their request upon registration
 	 * @param client This is the client to move
@@ -143,18 +145,33 @@ public class Manager implements IManager {
 	 * @return int Returns whether the player can be placed or not
 	 */
 	@Override
-	public int setZone(IClient client, int zoneID) {
-		return zoneID;
-//		try {
-//			IZone selectedZone = zones.get(zoneID);
-//			selectedZone.register(client);
-//			return zoneID;
-//		}
-//		catch(RemoteException e) {
-//			sendMessage(client, "Unable to register to zone");
-//			CLIMessage.DisplayMessage("Unable to register client to zone", false);
-//		}
-//		return -1;
+	public void setZone(IClient client, int zoneID) {
+		if(client == null) return ;
+		
+		int row = (zoneID - 1)/N;
+		int col = (zoneID - 1)%N;
+
+		try {
+			IZone selectedZone ;
+			try {
+				selectedZone = zones[row][col];				
+			}
+			catch(Exception ex) {
+				System.out.println("OUT OF BOUNDS?");
+				return;
+			}
+			
+			if(selectedZone == null) {
+				return;
+			}
+			selectedZone.register(client);
+			
+		}
+		catch(RemoteException e) {
+			sendMessage(client, "Unable to register to zone");
+			CLIMessage.DisplayMessage("Unable to register client to zone", false);
+		}
+
 	}
 	//=======================================================================================
 	/***
@@ -177,10 +194,16 @@ public class Manager implements IManager {
 	public String getAvaialbeZones() throws RemoteException {
 		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
 				+ "Please select a zone number from the following range\n"
-				+ "Zones available: " + (N*N) + "\n"
-				+ "Range: 0 - "+(N*N));
+				+ "Zones available: " + (N) + "\n"
+				+ "Range: 1 - "+(N));
 
 		return zoneSelectionMessage.toString();
+	}
+
+	@Override
+	public void notifyZones()  {
+		prepareAllZones();
+			
 	}
 
 

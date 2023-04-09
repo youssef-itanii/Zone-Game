@@ -18,14 +18,12 @@ import zone.Zone;
 public class Client implements IClient{
 
 	private IManager manager;
-	private IZone zone;
+	public IZone zone;
 	private Player player;
 	public int ID;
 	private int X;
 	private int Y;
 	
-	public int ID;
-
 	public Client(Player player) {
 		try {
 			UnicastRemoteObject.exportObject(this , 0);
@@ -80,7 +78,7 @@ public class Client implements IClient{
 	}
 
 	@Override
-	public int recieveMessage(String message) throws RemoteException {
+	public void recieveMessage(String message) throws RemoteException {
 		player.processMessage(message);
 
 
@@ -95,9 +93,7 @@ public class Client implements IClient{
 
 	public String requestMovement(Player.Direction direction) {
 		try {
-			if(zone.playerCanMove(direction)) {
-				return zone.updateCoordinates(this, direction);
-			}
+			return zone.movePlayer(this, direction);
 
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to request coordinates update", false);
@@ -120,11 +116,11 @@ public class Client implements IClient{
 
 
 
-	public int registerToZone(int id) {
+	public void registerToZone(int id) {
 		try {
-			return manager.setZone(this, id);
+			manager.setZone(this, id);
 		} catch (RemoteException e) {
-			return -1;
+			CLIMessage.DisplayMessage("Unable to register to zone", false);
 		}
 	}
 	public String requestAvaialableZones() {
@@ -135,6 +131,15 @@ public class Client implements IClient{
 			CLIMessage.DisplayMessage("Unable to retrieve zones", true);
 		}
 		return "";
+	}
+	
+	public int getZoneID() {
+		try {
+			return zone.getID();
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Zone is not avaialbe", false);
+			return -1;
+		}
 	}
 
 }
