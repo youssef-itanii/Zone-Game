@@ -184,6 +184,7 @@ public class Zone implements IZone{
 			CLIMessage.DisplayMessage("Unable to generate map for client", false);
 		}
         CLIMessage.DisplayMessage("Registered client", false);
+        notifyNeighbors(client);
     }
 
     /**
@@ -263,9 +264,14 @@ public class Zone implements IZone{
     }
 
     private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client){
-    	if(!playerCanMove(row, col)) {
-    		return "";
-    	}
+    	try {
+			if(!targetZone.cellIsEmpty(row, col)) {
+				return "";
+			}
+		} catch (RemoteException e1) {
+			CLIMessage.DisplayMessage("Cannot communicate with target zone", false);
+			return "";
+		}
         try {
 			unregister(client);
 			targetZone.register(client , row , col); // Register to the target zone
@@ -433,6 +439,11 @@ public class Zone implements IZone{
 	public int getID() throws RemoteException {
 		return ID;
 		
+	}
+
+	@Override
+	public boolean cellIsEmpty(int row, int col) throws RemoteException {
+		return board[row][col] == null;
 	}
 
 

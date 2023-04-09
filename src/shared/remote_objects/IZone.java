@@ -19,5 +19,6 @@ public interface IZone extends Remote{
 	void recieveMessage(String message) throws RemoteException;
 	void setPosition(int index) throws RemoteException;
 	void registerNeighbouringZone()throws RemoteException;
+	boolean cellIsEmpty(int row, int col) throws RemoteException;
 
 }
