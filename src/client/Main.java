@@ -12,11 +12,11 @@ public class Main {
 		client.register();
 		player.setClient(client);
 		player.start();
-		
-		
-		
+
+
+
 		player.logout();
-		
+
 
 	}
 }

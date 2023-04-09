@@ -21,10 +21,10 @@ public class Manager implements IManager {
 	private int registeredZones = 0;
 	private int MAX_ZONES = 4;
 	private ArrayList<IZone> zones;
-	
-	
+
+
 	//=========================================================================
-	
+
 	/***
 	 * Constructor for Manager
 	 * Creates the registry, binds itself, and exports itself as a remote object
@@ -36,7 +36,7 @@ public class Manager implements IManager {
 			Registry registry = LocateRegistry.createRegistry(1099);
 			registry.bind("Manager", this);
 			UnicastRemoteObject.exportObject(this , 0);
-			
+
 
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to register manager", true);
@@ -44,11 +44,10 @@ public class Manager implements IManager {
 			CLIMessage.DisplayMessage("Manager is already bound", true);;
 		}
 		zones = new ArrayList<>();
-		
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
 	}
-	
+
 	/***
 	 * Register new client
 	 */
@@ -58,18 +57,18 @@ public class Manager implements IManager {
 		connectedClients.add(client);
 		Message message = new Message("Manager" , "Welcome!");
 		CLIMessage.DisplayMessage("New user registered", false);
-		
+
 		sendMessage(client , message.toString());
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
-//		
-	
+//
+
 
 		return connectedClients.size();
-		
+
 	}
 
 	/***
-	 * Register new zone 
+	 * Register new zone
 	 */
 	@Override
 	public int register(IZone zone) throws RemoteException {
@@ -77,29 +76,29 @@ public class Manager implements IManager {
 			//Notify fail due to max capacity
 			return -1;
 		}
-		
+
 		zones.add(zone);
 		//Send ID
 		registeredZones++;
 		return registeredZones;
-		
+
 	}
 	//===============================CLIENT REMOVAL==========================================
 	@Override
 	public void unregister(IClient client) throws RemoteException {
 		// TODO Auto-generated method stub
 		removeClient(client);
-		
+
 	}
-	
+
 	private void removeClient(IClient client) {
 		connectedClients.remove(client);
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
 	}
 	//=======================================================================================
-	
+
 	/***
-	 * Moves the client from one zone to another based on the coordinates processed by the previous zone. 
+	 * Moves the client from one zone to another based on the coordinates processed by the previous zone.
 	 * @param client This is the client to move
 	 * @param caller Zone that requested moving the client
 	 * @param dest Destination zone
@@ -114,9 +113,9 @@ public class Manager implements IManager {
 			dest.updateCoordinates(client, x , y);
 			return true;
 		}
-		
+
 		caller.recieveMessage("Cannot move player to that zone");
-		return false;	
+		return false;
 	}
 	/***
 	 * Moves the client to a zone based on their request upon registration
@@ -136,7 +135,7 @@ public class Manager implements IManager {
 //			sendMessage(client, "Unable to register to zone");
 //			CLIMessage.DisplayMessage("Unable to register client to zone", false);
 //		}
-//		return -1;	
+//		return -1;
 	}
 	//=======================================================================================
 	/***
@@ -144,7 +143,7 @@ public class Manager implements IManager {
 	 */
 	@Override
 	public void sendMessage(IClient client, String message) {
-		
+
 		try {
 			client.recieveMessage(message);
 		}
@@ -152,7 +151,17 @@ public class Manager implements IManager {
 			removeClient(client);
 			CLIMessage.DisplayMessage("Unable to send message to client", false);
 		}
-		
+
+	}
+
+	@Override
+	public String getAvaialbeZones() throws RemoteException {
+		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
+				+ "Please select a zone number from the following range\n"
+				+ "Zones available: " + zones.size() + "\n"
+				+ "Range: 0 - "+(zones.size()));
+
+		return zoneSelectionMessage.toString();
 	}
 
 	@Override

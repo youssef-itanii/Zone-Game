@@ -22,6 +22,8 @@ public class Client implements IClient{
 	private Player player;
 	public int ID;
 	
+	public int ID;
+
 	public Client(Player player) {
 		try {
 			UnicastRemoteObject.exportObject(this , 0);
@@ -31,9 +33,9 @@ public class Client implements IClient{
 			e.printStackTrace();
 			CLIMessage.DisplayMessage("Unable to export user object", true);
 		}
-	
+
 	}
-	
+
 	public void register() {
 		try {
 			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
@@ -41,81 +43,82 @@ public class Client implements IClient{
 			CLIMessage.DisplayMessage("Found manager and registered", false);
 			
 			ID = manager.register(this);
-			CLIMessage.DisplayMessage("GOT ID "+ID, false);			
+			CLIMessage.DisplayMessage("GOT ID "+ID, false);
 		} catch (RemoteException e) {
-	
+
 			CLIMessage.DisplayMessage("Unable to register client", true);
 		} catch (NotBoundException e) {
 			CLIMessage.DisplayMessage("Unable to locate Manager in registry", true);
 		}
 
 	}
-	
+
 	@Override
 	public void setZone(IZone target) throws RemoteException {
 		zone = target;
-		
+
 	}
 
 	@Override
 	public void setCoordinates(int x, int y) throws RemoteException {
 		// TODO Auto-generated method stub
 		
+
 	}
 
 	@Override
 	public void getX() throws RemoteException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void getY() throws RemoteException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void recieveMessage(String message) throws RemoteException {
 		player.processMessage(message);
-		
-		
+
+
 	}
 
 	@Override
 	public void recieveUpdatedMap(String map) throws RemoteException {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
-	
+
+
 	public String requestMovement(Player.Direction direction) {
 		try {
 			if(zone.playerCanMove(direction)) {
 				return zone.updateCoordinates(this, direction);
 			}
-		
+
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to request coordinates update", false);
 		}
-		
+
 		return "";
 	}
-	
+
 	public void unregister() {
 		try {
 			manager.unregister(this);
-			
+
 		} catch (RemoteException e) {
-	
+
 			CLIMessage.DisplayMessage("Unable to unregister client", true);
-		
-		
+
+
 		}
 	}
 
 
-	
+
 	public int registerToZone(int id) {
 		try {
 			return manager.setZone(this, id);
