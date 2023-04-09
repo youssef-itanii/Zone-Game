@@ -19,7 +19,23 @@ public class AppConfig {
 			// TODO: handle exception
 		}
 		
-		return Integer.parseInt(prop.getProperty("N"));
+		return Integer.parseInt(prop.getProperty("NUMBER_OF_ZONES"));
+	}
+	
+	public static int getZoneSize() {
+		Properties prop = new Properties();
+		String fileName = "app.config";
+		try(FileInputStream fis = new FileInputStream(fileName)){
+			prop.load(fis);
+		}
+		catch(FileNotFoundException ex) {
+			
+		}
+		catch (IOException e) {
+			// TODO: handle exception
+		}
+		
+		return Integer.parseInt(prop.getProperty("ZONE_SIZE"));
 	}
 
 }

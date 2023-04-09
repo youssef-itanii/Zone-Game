@@ -25,7 +25,7 @@ public class Manager implements IManager {
 	private int N;
 	int zoneRow = 0;
 	int zoneCol = 0;
-	IZone[][] zones;
+	List<IZone> zones;
 
 
 	//=========================================================================
@@ -51,7 +51,7 @@ public class Manager implements IManager {
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
 		N = AppConfig.getNumberOfZones();
-		zones = new IZone[N][N];
+		zones = new ArrayList<IZone>();
 	}
 
 	/***
@@ -88,38 +88,40 @@ public class Manager implements IManager {
 		}
 
 		//set position in registry
+		int currentIndex = registeredZones;
 		try {
-			zone.setPosition(zoneRow, zoneCol);
+			zone.setPosition(currentIndex);
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to register new zone", false);
 			return -1;
 		}
-		zones[zoneRow][zoneCol] = zone;
+		zones.add(zone);
 		zoneCol++;
 		registeredZones++;
-		return registeredZones;
+		return currentIndex;
 
 	}
 	
 	private void prepareAllZones() {
 		for(int i = 0; i < N; i++) {
-			for(int j = 0 ; j < N ; j++) {
+			
 				try {
-					if(zones[i][j] != null)
-					zones[i][j].registerNeighbouringZone();
+					if(zones.get(i) != null)
+					zones.get(i).registerNeighbouringZone();
 				} catch (RemoteException e) {
 					CLIMessage.DisplayMessage("Unable to notify zone to register with neighbors", false);
 				}
-			}
+			
 		}
 	}
 	
 	@Override
-	public IZone getNeighborZone(int row, int col) {
+	public IZone getNeighborZone(int index) {
+	
 		try {			
-			return zones[row][col];
+			return zones.get(index);
 		}
-		catch (ArrayIndexOutOfBoundsException ex) {
+		catch (IndexOutOfBoundsException ex) {
 			return null;
 		}
 	}
@@ -154,7 +156,7 @@ public class Manager implements IManager {
 		try {
 			IZone selectedZone ;
 			try {
-				selectedZone = zones[row][col];				
+				selectedZone = zones.get(zoneID - 1);				
 			}
 			catch(Exception ex) {
 				System.out.println("OUT OF BOUNDS?");
@@ -164,7 +166,7 @@ public class Manager implements IManager {
 			if(selectedZone == null) {
 				return;
 			}
-			selectedZone.register(client);
+			selectedZone.register(client , -1 , -1);
 			
 		}
 		catch(RemoteException e) {
@@ -195,7 +197,7 @@ public class Manager implements IManager {
 		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
 				+ "Please select a zone number from the following range\n"
 				+ "Zones available: " + (N) + "\n"
-				+ "Range: 1 - "+(N));
+				+ "Range: 0 - "+(N));
 
 		return zoneSelectionMessage.toString();
 	}

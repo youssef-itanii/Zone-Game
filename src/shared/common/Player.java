@@ -19,8 +19,8 @@ public class Player {
 	private String DARK_AREA = "\u001B[1;40m \u001B[0m";
 	private String LIGHT_AREA = "\u001B[1;47m \u001B[0m";
 	private String YOU = "\u001B[1;47m\u001B[1;32mU\u001B[0m\u001B[0m";
-	public int x = 0;
-	public int y = 0;
+	public int x = -1;
+	public int y = -1;
 	String map = "";
 	private Scanner scanner;
 	private Client client;
@@ -35,6 +35,7 @@ public class Player {
 		requestAvaialableZones();
 		
 		//Display map of zone you are registered too
+//		while(map == "") {}
 		displayMap();
 		
 		//Take in movement input
@@ -56,7 +57,7 @@ public class Player {
 	}
 
 	public void setCoordinates(int y , int x) {
-		CLIMessage.DisplayMessage("Coodirates set x: "+x +" y: "+y, null);
+		CLIMessage.DisplayMessage("Coodirates set x: "+x +" y: "+y, false);
 		this.x = x;
 		this.y = y;
 	}
@@ -96,6 +97,8 @@ public class Player {
 			map = mapResp;
 			x = future_x;
 			y = future_y;
+			client.X = x;
+			client.Y = y;
 			
 		}
 			return true;
@@ -134,8 +137,10 @@ public class Player {
 			mapToDisplay+="\n";
 		}
 		clearScreen();
+		System.out.println(map);
 		System.out.println("\u001B[1;92m====================  ZONE "+client.getZoneID()+"  ====================\u001B[0m");
 		System.out.println("\u001B[1;92m====================  YOUR ID: "+client.ID+"  ====================\u001B[0m");
+		System.out.println("\u001B[1;92mYOUR POSITION: \n-ROW: "+this.y+"\n-COL: "+this.x+" \u001B[0m");
 		System.out.println(mapToDisplay);
 		
 	}

@@ -21,8 +21,8 @@ public class Client implements IClient{
 	public IZone zone;
 	private Player player;
 	public int ID;
-	private int X;
-	private int Y;
+	public int X;
+	public int Y;
 	
 	public Client(Player player) {
 		try {
@@ -60,9 +60,10 @@ public class Client implements IClient{
 	}
 
 	@Override
-	public void setCoordinates(int x, int y) throws RemoteException {
+	public void setCoordinates(int y, int x) throws RemoteException {
 		X = x;
 		Y = y;
+		player.setCoordinates(y, x);
 	}
 
 	@Override
