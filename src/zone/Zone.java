@@ -27,6 +27,11 @@ public class Zone implements IZone{
     private IZone zoneDown;
     private IZone zoneLeft;
     private IZone zoneRight;
+    private int leftZoneOffset = 1;
+    private int rightZoneOffset = 1;
+    private int upperZoneOffset = 1;
+    private int lowerZoneOffset = 1;
+    
     private List<IClient> clientList;
     private IClient[][] board;
     private IManager manager;
@@ -39,8 +44,6 @@ public class Zone implements IZone{
     private Registry registry;
     private int index;
 
-
- 
     public Zone() {
     	try {
 			UnicastRemoteObject.exportObject(this , 0);
@@ -96,7 +99,7 @@ public class Zone implements IZone{
     private void RegisterZones(){
 
             try {
-            	zoneUp = manager.getNeighborZone(index - 4);
+            	zoneUp = manager.getNeighborZone(index - 4*upperZoneOffset);
             	if(zoneUp == null) {
             		CLIMessage.DisplayMessage("No upper zone", false);
             	}
@@ -110,7 +113,7 @@ public class Zone implements IZone{
         
             try {
                
-            	zoneDown = manager.getNeighborZone(index + 4);
+            	zoneDown = manager.getNeighborZone(index + 4*lowerZoneOffset);
             	if(zoneDown == null) {
             		CLIMessage.DisplayMessage("No bottom zone", false);
             	}
@@ -123,7 +126,7 @@ public class Zone implements IZone{
         
 
             try {
-            	zoneLeft = manager.getNeighborZone(index - 1);
+            	zoneLeft = manager.getNeighborZone(index - leftZoneOffset);
             	if(zoneLeft == null) {
             		CLIMessage.DisplayMessage("No left zone", false);
             	}
@@ -136,7 +139,7 @@ public class Zone implements IZone{
         
 
             try {
-                zoneRight = manager.getNeighborZone(index + 1);
+                zoneRight = manager.getNeighborZone(index + rightZoneOffset);
             	if(zoneRight == null) {
             		CLIMessage.DisplayMessage("No right zone", false);
             	}
@@ -272,19 +275,39 @@ public class Zone implements IZone{
  
     }
     //===========================================================================
-    private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client){
+    private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client , Player.Direction direction){
     	try {
 			if(!targetZone.cellIsEmpty(row, col)) {
 				return "";
 			}
 		} catch (RemoteException e1) {
-			CLIMessage.DisplayMessage("Cannot communicate with target zone", false);
-			return "";
+			switch (direction) {
+			case LEFT: {
+				handleLeftZoneDisconnect();
+				if(zoneLeft != null) {
+					targetZone = zoneLeft;
+					try {
+						if(!targetZone.cellIsEmpty(row, col)) {
+							return "";
+						}
+					} catch (RemoteException e) {
+						return "";
+					}
+				}
+			}
+			default:
+				return "";
+			}
 		}
-        try {
-			unregister(client);
-			targetZone.register(client , row , col); // Register to the target zone
+    	unregister(client);
+    	try {
+			targetZone.register(client , row , col);
 			targetZone.placePlayer(client, row, col); // Move to the new zone
+		} catch (RemoteException e1) {
+		
+			
+		} // Register to the target zone
+        try {
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
 			broadcastMap();
@@ -297,6 +320,23 @@ public class Zone implements IZone{
     }
 
     //===========================================================================
+    
+    private void handleLeftZoneDisconnect() {
+    	leftZoneOffset++;
+        try {
+        	zoneLeft = manager.getNeighborZone(index - leftZoneOffset);
+        	if(zoneLeft == null) {
+        		CLIMessage.DisplayMessage("No left zone to connect to", false);
+        	}
+        	else {
+                CLIMessage.DisplayMessage("new left zone registered", false);
+        	}
+        } catch (RemoteException e) {
+            CLIMessage.DisplayMessage("Unable to register left zone", true);
+        }
+    
+ 
+    }
     
     private void sendMessageToNeighbors(int row, int col , IClient sender) {
 
@@ -403,7 +443,7 @@ public class Zone implements IZone{
                 yUpdated = yCoordinate - 1;
                 if(yUpdated < 0){  // (2) Leave the zone
                 	if(zoneUp == null) return "";
-                    return movePlayerToNewZone(xCoordinate , N -1 , zoneUp , client);
+                    return movePlayerToNewZone(xCoordinate , N -1 , zoneUp , client , direction);
                     
                 }
                 else{ // (3) Within the zone
@@ -419,7 +459,7 @@ public class Zone implements IZone{
                 yUpdated = yCoordinate + 1;
                 if(yUpdated >= N){
                 	if(zoneDown==null) return "";
-                    return movePlayerToNewZone(xCoordinate , 0 , zoneDown , client);
+                    return movePlayerToNewZone(xCoordinate , 0 , zoneDown , client, direction);
              
                 }
                 else{
@@ -436,7 +476,7 @@ public class Zone implements IZone{
                 xUpdated = xCoordinate - 1;
                 if(xUpdated < 0){
                 	if(zoneLeft==null) return "";
-                    return movePlayerToNewZone(N-1 , yCoordinate , zoneLeft , client);
+                    return movePlayerToNewZone(N-1 , yCoordinate , zoneLeft , client, direction);
                 }
                 else
                 {
@@ -451,7 +491,7 @@ public class Zone implements IZone{
                 xUpdated = xCoordinate + 1;
                 if(xUpdated >= N) {
                 	if(zoneRight==null) return "";
-                    return movePlayerToNewZone(0, yCoordinate , zoneRight , client);
+                    return movePlayerToNewZone(0, yCoordinate , zoneRight , client, direction);
                 }
                 else
                 {
