@@ -205,6 +205,18 @@ public class Zone implements IZone{
     		
     	
         clientList.remove(client);
+        broadcastMap();
+        
+    }
+    
+    private void unregisterDisconnectedUser(IClient client , int row , int col) {
+		CLIMessage.DisplayMessage("Unable to communicate with client. Unregistering client...", false);
+    	if(clientList.contains(client)) {
+    		clientList.remove(client);
+    	}
+    	
+    	board[row][col] = null;
+    	broadcastMap();
     }
     //===========================================================================
     public void placePlayer(IClient client, int y, int x) throws RemoteException{
@@ -250,9 +262,6 @@ public class Zone implements IZone{
         return generatedMap;
     }
     //===========================================================================
-	
-		
-	
     private boolean playerCanMove(int row , int col){
     	if(board[row][col] == null) {
     		CLIMessage.DisplayMessage("Cell requested is free", false);
@@ -279,44 +288,46 @@ public class Zone implements IZone{
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
 			broadcastMap();
-			sendMessageToNeighbors(row , col , client.getID());
+			sendMessageToNeighbors(row , col, client);
 			return "";
 		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to unregister client", false);
+			unregisterDisconnectedUser(client, row, col);
 		}
 		return ""; 
     }
 
     //===========================================================================
     
-    private void sendMessageToNeighbors(int row, int col , int senderID) {
-    	List<IClient> neighboringClients = new ArrayList<IClient>();
+    private void sendMessageToNeighbors(int row, int col , IClient sender) {
 
-		if(row - 1 >= 0) {
-			neighboringClients.add(board[row-1][col]);
-		}
+		messageNeighbor((row - 1 >= 0) , sender, row, col,  row -1 , col);
+		messageNeighbor((row + 1 < N) , sender, row, col, row + 1 , col);
+		messageNeighbor((col - 1 >=1 ) , sender, row, col, row , col - 1);
+		messageNeighbor((col + 1 < N) , sender, row,col ,row , col+1);
 
-    	
-    	if(row + 1 < N) {
-			neighboringClients.add(board[row+1][col]);
-    	}
-    	
-		if(col - 1 >= 0) {
-			neighboringClients.add(board[row][col - 1]);
-		}
- 
-    	
-    	if(col + 1 < N) {
-			neighboringClients.add(board[row][col+1]);
-    	}
-    	
-    	for(IClient neighbor : neighboringClients) {
-    		if(neighbor == null) continue;
-    		try {
-				neighbor.recieveMessage("Hello" , "Player "+senderID);
-			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
-			}
+    }
+    private void messageNeighbor(boolean exp, IClient sender, int senderRow , int senderCol , int row , int col) {
+    	if(exp) {
+    		IClient neighbor = board[row][col];
+    		if(neighbor!= null) {
+    			int neighborID;
+    			try {
+    				neighbor.recieveMessage("Hello" , "Player "+sender.getID());
+    				neighborID = neighbor.getID();
+    				
+    			} catch (RemoteException e) {
+    				unregisterDisconnectedUser(neighbor, row, col);
+    				return;
+    			}
+    			try {
+					sender.recieveMessage("Hello!", "Player "+neighborID);
+				} catch (RemoteException e) {
+					unregisterDisconnectedUser(sender, row, col);
+    				return;
+				}
+    			
+    			
+    		}
     	}
     }
     
@@ -374,12 +385,9 @@ public class Zone implements IZone{
         board[prevRow][prevCol] = null;
         board[newRow][newCol] = client;
         broadcastMap();
-    	try {
-			sendMessageToNeighbors(newRow, newCol , client.getID());
-		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to obtain client id", false);
-			//Remove from list and board	
-		}
+    
+		sendMessageToNeighbors(newRow, newCol , client);
+	
     	return GenerateUpdatedMapString();
     }
     

@@ -1,6 +1,5 @@
 package manager;
 
-import java.io.ObjectInputFilter.Config;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -21,7 +20,6 @@ public class Manager implements IManager {
 
 	private List<IClient> connectedClients = null;
 	private int registeredZones = 0;
-	private int MAX_ZONES;
 	private int N;
 	int zoneRow = 0;
 	int zoneCol = 0;
@@ -105,12 +103,12 @@ public class Manager implements IManager {
 	private void prepareAllZones() {
 		for(int i = 0; i < N; i++) {
 			
-				try {
-					if(zones.get(i) != null)
-					zones.get(i).registerNeighbouringZone();
-				} catch (RemoteException e) {
-					CLIMessage.DisplayMessage("Unable to notify zone to register with neighbors", false);
-				}
+			try {
+				if(zones.get(i) != null)
+				zones.get(i).registerNeighbouringZone();
+			} catch (RemoteException e) {
+				CLIMessage.DisplayMessage("Unable to notify zone to register with neighbors", false);
+			}
 			
 		}
 	}
