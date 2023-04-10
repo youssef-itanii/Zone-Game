@@ -183,7 +183,7 @@ public class Manager implements IManager {
 	public void sendMessage(IClient client, String message) {
 
 		try {
-			client.recieveMessage(message);
+			client.recieveMessage(message, "Manager");
 		}
 		catch(RemoteException e) {
 			removeClient(client);

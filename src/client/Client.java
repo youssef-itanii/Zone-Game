@@ -79,8 +79,8 @@ public class Client implements IClient{
 	}
 
 	@Override
-	public void recieveMessage(String message) throws RemoteException {
-		player.processMessage(message);
+	public void recieveMessage(String message, String author) throws RemoteException {
+		player.processMessage("* "+author+": "+message);
 
 
 	}
@@ -143,6 +143,11 @@ public class Client implements IClient{
 			CLIMessage.DisplayMessage("Zone is not avaialbe", false);
 			return -1;
 		}
+	}
+
+	@Override
+	public int getID() throws RemoteException {
+		return ID;
 	}
 
 }

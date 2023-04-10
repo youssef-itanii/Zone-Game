@@ -153,7 +153,6 @@ public class Player {
 	
 	public void processMessage(String message) {
 		
-	
 		if(message.contains("[Zone-select]")) {
 			startZoneSelection(message);
 		}

@@ -22,7 +22,8 @@ import java.util.Random;
 
 
 public class Zone implements IZone{
-    private IZone zoneUp;
+
+	private IZone zoneUp;
     private IZone zoneDown;
     private IZone zoneLeft;
     private IZone zoneRight;
@@ -30,19 +31,15 @@ public class Zone implements IZone{
     private IClient[][] board;
     private IManager manager;
     private int ID;
-    final String REGISTRY_TABLE = "localhost";
-    final int REGISTRY_PORT = 1099;
-    final String MANAGER_NAME = "Manager";
+    private final String REGISTRY_TABLE = "localhost";
+    private final int REGISTRY_PORT = 1099;
+    private final String MANAGER_NAME = "Manager";
 	private int MAX_ZONES;
-    final int N;
-    Registry registry;
-    int index;
-    int rowPosition;
+    private final int N;
+    private Registry registry;
+    private int index;
 
-    /**
-     * 1 (0,0) 2 (0,1)
-     * 3 (1,0) 4 (1,1)
-     */
+
  
     public Zone() {
     	try {
@@ -87,13 +84,15 @@ public class Zone implements IZone{
             CLIMessage.DisplayMessage("Unable to locate Manager in registry for zone", true);
         }
     }
-    
+    //===========================================================================
+    /***
+     * Sets position of the zone in the zone array stored in the manager
+     */
 	@Override
 	public void setPosition(int index) throws RemoteException {
-		this.index = index;
-		
+		this.index = index;	
 	}
-
+    //===========================================================================
     private void RegisterZones(){
 
             try {
@@ -148,7 +147,7 @@ public class Zone implements IZone{
                 CLIMessage.DisplayMessage("Unable to register bottom zone", true);
             }  
     }
-
+    //===========================================================================
     /**
      * Add client to the zone
      * @param client
@@ -184,9 +183,9 @@ public class Zone implements IZone{
 			CLIMessage.DisplayMessage("Unable to generate map for client", false);
 		}
         CLIMessage.DisplayMessage("Registered client", false);
-        notifyNeighbors(client);
+        broadcastMap();
     }
-
+    //===========================================================================
     /**
      * Remove the registered client from the zone
      * todo: maybe check if the zone has the client
@@ -207,11 +206,11 @@ public class Zone implements IZone{
     	
         clientList.remove(client);
     }
-
+    //===========================================================================
     public void placePlayer(IClient client, int y, int x) throws RemoteException{
         board[y][x] = client;
     }
-    
+    //===========================================================================
     /**
      * Recieve a direction request and update the user with the update
      * @param client
@@ -235,6 +234,7 @@ public class Zone implements IZone{
         generatedMap.replace("\t", "");
         return generatedMap;	
 	}
+    //===========================================================================
     /**
      * Update client screen
      * @param client
@@ -249,7 +249,7 @@ public class Zone implements IZone{
 		String generatedMap = GenerateUpdatedMapString();
         return generatedMap;
     }
-	
+    //===========================================================================
 	
 		
 	
@@ -262,7 +262,7 @@ public class Zone implements IZone{
 		return false;
  
     }
-
+    //===========================================================================
     private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client){
     	try {
 			if(!targetZone.cellIsEmpty(row, col)) {
@@ -278,7 +278,8 @@ public class Zone implements IZone{
 			targetZone.placePlayer(client, row, col); // Move to the new zone
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
-			notifyNeighbors(client);
+			broadcastMap();
+			sendMessageToNeighbors(row , col , client.getID());
 			return "";
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to unregister client", false);
@@ -286,8 +287,40 @@ public class Zone implements IZone{
 		return ""; 
     }
 
+    //===========================================================================
     
-    private void notifyNeighbors(IClient client) {
+    private void sendMessageToNeighbors(int row, int col , int senderID) {
+    	List<IClient> neighboringClients = new ArrayList<IClient>();
+
+		if(row - 1 >= 0) {
+			neighboringClients.add(board[row-1][col]);
+		}
+
+    	
+    	if(row + 1 < N) {
+			neighboringClients.add(board[row+1][col]);
+    	}
+    	
+		if(col - 1 >= 0) {
+			neighboringClients.add(board[row][col - 1]);
+		}
+ 
+    	
+    	if(col + 1 < N) {
+			neighboringClients.add(board[row][col+1]);
+    	}
+    	
+    	for(IClient neighbor : neighboringClients) {
+    		if(neighbor == null) continue;
+    		try {
+				neighbor.recieveMessage("Hello" , "Player "+senderID);
+			} catch (RemoteException e) {
+				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
+			}
+    	}
+    }
+    
+    private void broadcastMap() {
 
 //    	List<IClient> neighboringClients = new ArrayList<IClient>();
 //    	int col = -1;
@@ -327,19 +360,26 @@ public class Zone implements IZone{
 //			}
 //    	}
     	
-    	for(IClient clientt: clientList) {
+    	for(IClient client: clientList) {
     		try {
-    			clientt.recieveUpdatedMap(map);
+    			client.recieveUpdatedMap(map);
 			} catch (RemoteException e) {
 				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
 			}
     	}
+	
     	
     }
     private String updateBoard(IClient client , int prevRow, int prevCol , int newRow, int newCol) {
         board[prevRow][prevCol] = null;
         board[newRow][newCol] = client;
-        notifyNeighbors(client);
+        broadcastMap();
+    	try {
+			sendMessageToNeighbors(newRow, newCol , client.getID());
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to obtain client id", false);
+			//Remove from list and board	
+		}
     	return GenerateUpdatedMapString();
     }
     
