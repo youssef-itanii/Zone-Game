@@ -1,5 +1,7 @@
 package shared.common;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import client.Client;
@@ -24,11 +26,16 @@ public class Player {
 	public String map = "";
 	private Scanner scanner;
 	private Client client;
-	
+	int messageCounter = 0;
+	final int MESSAGE_LIMIT = 4;
 	public boolean hasZone = false;
+	public List<String> messages;
 	
-	
+	public Player() {
+		messages = new ArrayList<String>();
+	}
 	public void start() {
+
 		clearScreen();
 		
 		//Request selection of zone
@@ -52,6 +59,20 @@ public class Player {
 		}
 	}
 	
+	public void addNewMessage(String message) {
+		messages.add(message);
+		messageCounter++;
+		if(messageCounter == MESSAGE_LIMIT - 1) {
+			messages.subList(0, messageCounter).clear();
+			messageCounter = 0;
+		}
+	}
+	
+	public void displayMessages() {
+		for(String message: messages) {
+			CLIMessage.DisplayMessage(message, false);
+		}
+	}
 	public void setClient(Client client) {
 		this.client = client;
 	}
@@ -142,6 +163,7 @@ public class Player {
 		System.out.println("\u001B[1;92m====================  YOUR ID: "+client.ID+"  ====================\u001B[0m");
 		System.out.println("\u001B[1;92mYOUR POSITION: \n-ROW: "+this.y+"\n-COL: "+this.x+" \u001B[0m");
 		System.out.println(mapToDisplay);
+		displayMessages();
 		
 	}
 	
@@ -157,7 +179,8 @@ public class Player {
 			startZoneSelection(message);
 		}
 		else {
-			CLIMessage.DisplayMessage(message, false);
+//			CLIMessage.DisplayMessage(message, false);
+			addNewMessage(message);
 		}
 	}
 	
