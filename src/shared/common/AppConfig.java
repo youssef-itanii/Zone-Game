@@ -21,7 +21,7 @@ public class AppConfig {
 		
 		return Integer.parseInt(prop.getProperty("NUMBER_OF_ZONES"));
 	}
-	
+    //===========================================================================
 	public static int getZoneSize() {
 		Properties prop = new Properties();
 		String fileName = "app.config";
@@ -37,7 +37,7 @@ public class AppConfig {
 		
 		return Integer.parseInt(prop.getProperty("ZONE_SIZE"));
 	}
-	
+    //===========================================================================
 	public static int getZonePerRow() {
 		Properties prop = new Properties();
 		String fileName = "app.config";

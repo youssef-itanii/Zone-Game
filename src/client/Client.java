@@ -35,7 +35,7 @@ public class Client implements IClient{
 		}
 
 	}
-
+    //===========================================================================
 	public void register() {
 		try {
 			Registry registry = LocateRegistry.getRegistry("localhost" , 1099);
@@ -52,39 +52,39 @@ public class Client implements IClient{
 		}
 
 	}
-
+    //===========================================================================
 	@Override
 	public void setZone(IZone target) throws RemoteException {
 		zone = target;
 
 	}
-
+    //===========================================================================
 	@Override
 	public void setCoordinates(int y, int x) throws RemoteException {
 		X = x;
 		Y = y;
 		player.setCoordinates(y, x);
 	}
-
+    //===========================================================================
 	@Override
 	public int getX() throws RemoteException {
 		return X;
 
 	}
-
+    //===========================================================================
 	@Override
 	public int getY() throws RemoteException {
 		return Y;
 
 	}
-
+    //===========================================================================
 	@Override
 	public void recieveMessage(String message, String author) throws RemoteException {
 		player.processMessage("* "+author+": "+message);
 
 
 	}
-
+    //===========================================================================
 	@Override
 	public void recieveUpdatedMap(String map) throws RemoteException {
 		// TODO Auto-generated method stub
@@ -93,7 +93,7 @@ public class Client implements IClient{
 
 	}
 
-
+    //===========================================================================
 	public String requestMovement(Player.Direction direction) {
 		try {
 			return zone.movePlayer(this, direction);
@@ -104,7 +104,7 @@ public class Client implements IClient{
 
 		return "";
 	}
-
+    //===========================================================================
 	public void unregister() {
 		try {
 			manager.unregister(this);
@@ -116,7 +116,7 @@ public class Client implements IClient{
 
 		}
 	}
-
+    //===========================================================================
 
 
 	public void registerToZone(int id) {
@@ -126,6 +126,7 @@ public class Client implements IClient{
 			CLIMessage.DisplayMessage("Unable to register to zone", false);
 		}
 	}
+    //===========================================================================
 	public String requestAvaialableZones() {
 		try {
 			return manager.getAvaialbeZones();
@@ -135,7 +136,7 @@ public class Client implements IClient{
 		}
 		return "";
 	}
-	
+    //===========================================================================
 	public int getZoneID() {
 		try {
 			return zone.getID();
@@ -144,7 +145,7 @@ public class Client implements IClient{
 			return -1;
 		}
 	}
-
+    //===========================================================================
 	@Override
 	public int getID() throws RemoteException {
 		return ID;

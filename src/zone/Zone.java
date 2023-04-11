@@ -29,8 +29,7 @@ public class Zone implements IZone{
     private IZone zoneRight;
     private int leftZoneOffset = 1;
     private int rightZoneOffset = 1;
-    private int upperZoneOffset = 1;
-    private int lowerZoneOffset = 1;
+
     
     private List<IClient> clientList;
     private IClient[][] board;
@@ -292,12 +291,14 @@ public class Zone implements IZone{
 				return "";
 			}
 		}
+    	//If there is no new zone, then return null and do nothing
     	if(targetZone == null) return "";
 		try {
 			if(!targetZone.cellIsEmpty(row, col)) {
 				return "";
 			}
 		} catch (RemoteException e2) {
+			//If the newly connected zone disconnects, then just return an empty string
 			CLIMessage.DisplayMessage("Cannot communicate with target zone", false);
 			return "";
 		}
@@ -312,6 +313,7 @@ public class Zone implements IZone{
         try {
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
+			//Broadcast the map first to avoid erasing the messages
 			broadcastMap(client);
 			sendMessageToNeighbors(row , col, client);
 			return "";
@@ -329,6 +331,7 @@ public class Zone implements IZone{
     	IZone newZone = null;
     	int currentIndex = index;
     	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
+    	
     	while((currentIndex >= 0 && currentIndex < MAX_ZONES)) {
     		currentIndex+= offset;
     		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
@@ -352,7 +355,7 @@ public class Zone implements IZone{
     	return null;    
 
     }
-    
+    //===========================================================================
     private void sendMessageToNeighbors(int row, int col , IClient sender) {
 
 		messageNeighbor((row - 1 >= 0) , sender, row, col,  row -1 , col);
@@ -361,6 +364,7 @@ public class Zone implements IZone{
 		messageNeighbor((col + 1 < N) , sender, row,col ,row , col+1);
 
     }
+    //===========================================================================
     private void messageNeighbor(boolean exp, IClient sender, int senderRow , int senderCol , int row , int col) {
     	if(exp) {
     		IClient neighbor = board[row][col];
@@ -385,29 +389,29 @@ public class Zone implements IZone{
     		}
     	}
     }
+    //===========================================================================
+//    private void sendMapToNeighbor(boolean exp, IClient sender, int row , int col , String map) {
+//    	if(exp) {
+//    		IClient neighbor = board[row][col];
+//    		if(neighbor!= null) {
+//    			try {
+//    				neighbor.recieveUpdatedMap(map);
+//    				
+//    			} catch (RemoteException e) {
+//    				unregisterDisconnectedUser(neighbor, row, col);
+//    				return;
+//    			}
+//    			try {
+//					CLIMessage.DisplayMessage("Sent updated map to Player "+sender.getID()+" neighbor", false);
+//				} catch (RemoteException e) {
+//    				return;
+//				}
+//    			
+//    		}
+//    	}
+//    }
     
-    private void sendMapToNeighbor(boolean exp, IClient sender, int row , int col , String map) {
-    	if(exp) {
-    		IClient neighbor = board[row][col];
-    		if(neighbor!= null) {
-    			try {
-    				neighbor.recieveUpdatedMap(map);
-    				
-    			} catch (RemoteException e) {
-    				unregisterDisconnectedUser(neighbor, row, col);
-    				return;
-    			}
-    			try {
-					CLIMessage.DisplayMessage("Sent updated map to Player "+sender.getID()+" neighbor", false);
-				} catch (RemoteException e) {
-    				return;
-				}
-    			
-    		}
-    	}
-    }
-    
-    
+    //===========================================================================
     private void broadcastMap(IClient movingClient) {
 
 
@@ -440,6 +444,7 @@ public class Zone implements IZone{
 	
     	
     }
+    //===========================================================================
     private String updateBoard(IClient client , int prevRow, int prevCol , int newRow, int newCol) {
         board[prevRow][prevCol] = null;
         board[newRow][newCol] = client;
@@ -449,7 +454,7 @@ public class Zone implements IZone{
 	
     	return GenerateUpdatedMapString();
     }
-    
+    //===========================================================================
 	@Override
 	public String movePlayer(IClient client, Player.Direction direction) throws RemoteException{
         int xCoordinate = client.getX();
@@ -526,20 +531,20 @@ public class Zone implements IZone{
                 return "";
         }
     }
-
+    //===========================================================================
 
 	@Override
 	public void registerNeighbouringZone() {
 		   RegisterZones();
 		
 	}
-
+    //===========================================================================
 	@Override
 	public int getID() throws RemoteException {
 		return ID;
 		
 	}
-
+    //===========================================================================
 	@Override
 	public boolean cellIsEmpty(int row, int col) throws RemoteException {
 		return board[row][col] == null;

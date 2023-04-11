@@ -51,7 +51,7 @@ public class Manager implements IManager {
 		N = AppConfig.getNumberOfZones();
 		zones = new ArrayList<IZone>();
 	}
-
+    //===========================================================================
 	/***
 	 * Register new client
 	 */
@@ -70,7 +70,7 @@ public class Manager implements IManager {
 		return connectedClients.size();
 
 	}
-
+    //===========================================================================
 	/***
 	 * Register new zone
 	 */
@@ -112,7 +112,7 @@ public class Manager implements IManager {
 			
 		}
 	}
-	
+    //===========================================================================
 	@Override
 	public IZone getNeighborZone(int index) {
 	
@@ -189,7 +189,7 @@ public class Manager implements IManager {
 		}
 
 	}
-
+    //===========================================================================
 	@Override
 	public String getAvaialbeZones() throws RemoteException {
 		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
@@ -199,7 +199,7 @@ public class Manager implements IManager {
 
 		return zoneSelectionMessage.toString();
 	}
-
+    //===========================================================================
 	@Override
 	public void notifyZones()  {
 		prepareAllZones();

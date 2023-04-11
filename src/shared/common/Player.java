@@ -34,6 +34,7 @@ public class Player {
 	public Player() {
 		messages = new ArrayList<String>();
 	}
+	//=============================================================================================
 	public void start() {
 
 		clearScreen();
@@ -42,7 +43,6 @@ public class Player {
 		requestAvaialableZones();
 		
 		//Display map of zone you are registered too
-//		while(map == "") {}
 		displayMap();
 		
 		//Take in movement input
@@ -58,37 +58,40 @@ public class Player {
 			 }
 		}
 	}
-	
+	//=============================================================================================
 	public void addNewMessage(String message) {
 		messages.add(message);
 		messageCounter++;
+		//To avoid crowding the command line, set a limit to the number of messages
+		//Remove the first MESSAGE_LIMIT - 1 messages from the history list
 		if(messageCounter == MESSAGE_LIMIT - 1) {
 			messages.subList(0, messageCounter).clear();
 			messageCounter = 0;
 		}
 	}
-	
+	//=============================================================================================
 	public void displayMessages() {
 		for(String message: messages) {
 			CLIMessage.DisplayMessage(message, false);
 		}
 	}
+	//=============================================================================================
 	public void setClient(Client client) {
 		this.client = client;
 	}
-
+	//=============================================================================================
 	public void setCoordinates(int y , int x) {
 		CLIMessage.DisplayMessage("Coodirates set x: "+x +" y: "+y, false);
 		this.x = x;
 		this.y = y;
 	}
-
+	//=============================================================================================
 	public void logout() {
 		client.unregister();
 		scanner.close();
 		System.exit(0);
 	}
-	
+	//=============================================================================================
 	public boolean move(String input) {
 		Direction direction;
 		int future_x = x;
@@ -114,6 +117,7 @@ public class Player {
 				return false;
 		}
 		String mapResp = client.requestMovement(direction);
+		//"" means that the map did not update
 		if(!mapResp.equals("")) {
 			map = mapResp;
 			x = future_x;
@@ -124,7 +128,7 @@ public class Player {
 		}
 			return true;
 	}
-
+	//=============================================================================================
 	public void displayMap() {
 		String[] sections = map.split(" = ");
 		String mapToDisplay = "";
@@ -167,12 +171,12 @@ public class Player {
 		
 	}
 	
-	
+	//=============================================================================================
 	public void requestAvaialableZones() {
 		String mess = client.requestAvaialableZones();
 		startZoneSelection(mess);
 	}
-	
+	//=============================================================================================
 	public void processMessage(String message) {
 	
 		if(message.contains("[Zone-select]")) {
@@ -183,7 +187,7 @@ public class Player {
 			addNewMessage(message);
 		}
 	}
-	
+	//=============================================================================================
 	public void startZoneSelection(String message) {
 		System.out.println(message);
 		scanner  = new Scanner(System.in);
@@ -192,12 +196,8 @@ public class Player {
 		while(client.zone == null && input!=-2) {
 			System.out.print("Enter the zone ID: ");
 			input = scanner.nextInt();
-//			try {
-				client.registerToZone(input);
-//			}catch(Exception ex) {
-//				CLIMessage.DisplayMessage("Unable to register you in the zone. Try another one within the range", false);
-//				System.out.print(ex);
-//			}
+			client.registerToZone(input);
+
 		}
 		if(input == -2) {
 			CLIMessage.DisplayMessage("Exiting...", false);
@@ -214,7 +214,7 @@ public class Player {
 		}
 		
 	}
-	
+	//=============================================================================================
 	private void clearScreen() {
 		System.out.print("\033[H\033[2J");  
 		System.out.flush();
