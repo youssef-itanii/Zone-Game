@@ -252,21 +252,7 @@ public class Zone implements IZone{
         return generatedMap;	
 	}
     //===========================================================================
-    /**
-     * Update client screen
-     * @param client
-     * @param x
-     * @param y
-     * @return
-     * @throws RemoteException
-     */
-	@Override
-	public String updateCoordinates(IClient client,int x , int y){
 
-		String generatedMap = GenerateUpdatedMapString();
-        return generatedMap;
-    }
-    //===========================================================================
     private boolean playerCanMove(int row , int col){
     	if(board[row][col] == null) {
     		CLIMessage.DisplayMessage("Cell requested is free", false);
@@ -536,15 +522,7 @@ public class Zone implements IZone{
                 return "";
         }
     }
-    public void recieveMessage(String message) throws RemoteException{
 
-    }
-
-	@Override
-	public String updateCoordinates(IClient client, Direction direction) throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
 	public void registerNeighbouringZone() {
