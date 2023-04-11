@@ -7,13 +7,16 @@ import shared.common.Message;
 
 
 public interface IClient extends Remote{
-	
+
 	void setZone(IZone target) throws RemoteException;
 	void setCoordinates(int x , int y) throws RemoteException;
-//	Response sayHello() ?
-	void getX() throws RemoteException;
-	void getY() throws RemoteException;
-	void recieveMessage(Message message);
+	int getID() throws RemoteException;
+	int getX() throws RemoteException;
+	int getY() throws RemoteException;
+	//Recieve messages
+	void recieveMessage(String message, String author) throws RemoteException;
+	//Sends updated map to client
+	void recieveUpdatedMap(String map) throws RemoteException;
 
-	
+
 }
