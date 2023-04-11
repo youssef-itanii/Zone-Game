@@ -188,7 +188,7 @@ public class Zone implements IZone{
 			CLIMessage.DisplayMessage("Unable to generate map for client", false);
 		}
         CLIMessage.DisplayMessage("Registered client", false);
-        broadcastMap();
+        broadcastMap(client);
     }
     //===========================================================================
     /**
@@ -210,7 +210,7 @@ public class Zone implements IZone{
     		
     	
         clientList.remove(client);
-        broadcastMap();
+        broadcastMap(client);
         
     }
     
@@ -221,7 +221,7 @@ public class Zone implements IZone{
     	}
     	
     	board[row][col] = null;
-    	broadcastMap();
+    	broadcastMap(client);
     }
     //===========================================================================
     public void placePlayer(IClient client, int y, int x) throws RemoteException{
@@ -312,7 +312,7 @@ public class Zone implements IZone{
         try {
 			client.setZone(targetZone); // Set client's new zone to target zone
 			CLIMessage.DisplayMessage("Sending map", false);
-			broadcastMap();
+			broadcastMap(client);
 			sendMessageToNeighbors(row , col, client);
 			return "";
 		} catch (RemoteException e) {
@@ -386,45 +386,49 @@ public class Zone implements IZone{
     	}
     }
     
-    private void broadcastMap() {
+    private void sendMapToNeighbor(boolean exp, IClient sender, int row , int col , String map) {
+    	if(exp) {
+    		IClient neighbor = board[row][col];
+    		if(neighbor!= null) {
+    			try {
+    				neighbor.recieveUpdatedMap(map);
+    				
+    			} catch (RemoteException e) {
+    				unregisterDisconnectedUser(neighbor, row, col);
+    				return;
+    			}
+    			try {
+					CLIMessage.DisplayMessage("Sent updated map to Player "+sender.getID()+" neighbor", false);
+				} catch (RemoteException e) {
+    				return;
+				}
+    			
+    		}
+    	}
+    }
+    
+    
+    private void broadcastMap(IClient movingClient) {
 
-//    	List<IClient> neighboringClients = new ArrayList<IClient>();
-//    	int col = -1;
-//		
-//    	int row = -1;
-//		try {
-//			row = client.getY();
-//			col = client.getX();
-//		} catch (RemoteException e) {
-//			CLIMessage.DisplayMessage("Unable to obtain client coordinates", false);
-//		}
-//		if(row - 1 >= 0) {
-//			neighboringClients.add(board[row-1][col]);
-//		}
-// 
-//    	
-//    	if(row + 1 < N) {
-//			neighboringClients.add(board[row+1][col]);
-//    	}
-//    	
-//		if(col - 1 >= 0) {
-//			neighboringClients.add(board[row][col - 1]);
-//		}
-// 
-//    	
-//    	if(col + 1 < N) {
-//			neighboringClients.add(board[row][col+1]);
-//    	}
-//    	
+
+    	int col = -1;
+		
+    	int row = -1;
+		try {
+			row = movingClient.getY();
+			col = movingClient.getX();
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to obtain client coordinates", false);
+			return;
+		}
+    	
     	String map = GenerateUpdatedMapString();
-//    	for(IClient neighbor : neighboringClients) {
-//    		if(neighbor == null) continue;
-//    		try {
-//				neighbor.recieveUpdatedMap(map);
-//			} catch (RemoteException e) {
-//				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
-//			}
-//    	}
+    	
+//    	sendMapToNeighbor((row - 1 >= 0) , movingClient,  row -1 , col, map);
+//    	sendMapToNeighbor((row + 1 < N) , movingClient, row + 1 , col , map);
+//    	sendMapToNeighbor((col - 1 >=1 ) , movingClient, row , col - 1, map);
+//		sendMapToNeighbor((col + 1 < N) , movingClient, row , col+1 , map);
+
     	
     	for(IClient client: clientList) {
     		try {
@@ -439,8 +443,8 @@ public class Zone implements IZone{
     private String updateBoard(IClient client , int prevRow, int prevCol , int newRow, int newCol) {
         board[prevRow][prevCol] = null;
         board[newRow][newCol] = client;
-        broadcastMap();
     
+        broadcastMap(client);
 		sendMessageToNeighbors(newRow, newCol , client);
 	
     	return GenerateUpdatedMapString();
