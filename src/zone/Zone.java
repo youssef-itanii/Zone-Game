@@ -1,4 +1,6 @@
 package zone;
+import java.rmi.AccessException;
+import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -79,7 +81,15 @@ public class Zone implements IZone{
             manager = (IManager) registry.lookup(MANAGER_NAME);
             this.ID = manager.register(this);
             CLIMessage.DisplayMessage("Found manager and registered with ID "+ID, false);
+            try {
+				registry.bind("Zone-"+ID, this);
+				CLIMessage.DisplayMessage("Binded Zone-"+ID, false);
+
+			} catch (AlreadyBoundException e) {
+				 CLIMessage.DisplayMessage("Unable to bind zone to registry", true);
+			}
             if(this.ID == MAX_ZONES -1 && manager != null) {
+            	
             	manager.notifyZones();
             }
         } catch (RemoteException e) {
@@ -336,13 +346,20 @@ public class Zone implements IZone{
     		currentIndex+= offset;
     		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
     		
-    		try {
-				newZone = manager.getNeighborZone(currentIndex);
-
-			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Unable to communicate with manager", false);
-				return null;
-			}
+    		
+				try {
+					newZone = (IZone) registry.lookup("Zone-"+currentIndex);
+				} catch (AccessException e1) {
+					CLIMessage.DisplayMessage("Unable to access registery", false);
+					return null;
+				} catch (RemoteException e1) {
+					CLIMessage.DisplayMessage("Unable to communicate with registery", false);
+					return null;
+				} catch (NotBoundException e1) {
+					continue;
+				}
+			
+    	  		
     		try {
     			if(newZone == null) continue;
 				int zoneId = newZone.getID();
