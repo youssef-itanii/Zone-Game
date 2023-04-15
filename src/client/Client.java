@@ -147,5 +147,15 @@ public class Client implements IClient{
 	public int getID() throws RemoteException {
 		return ID;
 	}
+	//==========================================================================
+	public void requestZonesMap() {
+		try {
+			player.zonesMap = zone.getZonesMap();
+			player.displayZonesMap();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 }

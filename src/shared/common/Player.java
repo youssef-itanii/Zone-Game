@@ -24,6 +24,7 @@ public class Player {
 	public int x = -1;
 	public int y = -1;
 	public String map = "";
+	public String zonesMap = "";
 	private Scanner scanner;
 	private Client client;
 	int messageCounter = 0;
@@ -51,6 +52,10 @@ public class Player {
 		while(!input.equals("exit")) {
 			System.out.println("Enter direction to move");
 			 input = scanner.nextLine();  // Read user input
+			 if(input.contains("/map")){
+				 client.requestZonesMap();
+				 continue;
+			 }
 			 boolean moved = move(input);
 			 if(moved) displayMap();
 			 else {
@@ -58,6 +63,7 @@ public class Player {
 			 }
 		}
 	}
+
 	//=============================================================================================
 	public void addNewMessage(String message) {
 		messages.add(message);
@@ -171,6 +177,14 @@ public class Player {
 		displayMessages();
 		
 	}
+	
+	
+	public void displayZonesMap() {
+		clearScreen();
+		CLIMessage.DisplayMessage(zonesMap,false);
+		
+	}
+	
 	
 	private String markAsOtherPlayer(String character) {
 		return "\u001B[1;47m\u001B[1;31m"+character+"\u001B[0m\u001B[0m";
