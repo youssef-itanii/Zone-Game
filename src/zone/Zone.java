@@ -304,12 +304,13 @@ public class Zone implements IZone{
     	
     	IZone newZone = null;
     	int currentIndex = index;
-    	if(offset == 1 && (index+1)%ZONES_PER_ROW == 0) return null;
-    	if(offset == -1 && (index)%ZONES_PER_ROW == 0) return null;
+
     	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
     	
     	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
     		currentIndex+= offset;
+    		if(offset == 1 && currentIndex%ZONES_PER_ROW == 0) return null;
+        	if(offset == -1 && (currentIndex)%ZONES_PER_ROW == 0) return null;
     		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
     		
     		
@@ -514,8 +515,9 @@ public class Zone implements IZone{
 			upZoneID = zoneUp.getID();
 			
 		} catch (RemoteException | NullPointerException e) {
-//			zoneUp = connectToNewZone(-ZONES_PER_ROW);
-//			upZoneID = zoneUp.getID();
+			zoneUp = connectToNewZone(-ZONES_PER_ROW);
+			if(zoneUp != null)
+				upZoneID = zoneUp.getID();
 		}
 		
 		
@@ -523,23 +525,26 @@ public class Zone implements IZone{
 			downZoneID = zoneDown.getID();
 			
 		} catch (RemoteException | NullPointerException e) {
-//			zoneDown = connectToNewZone(ZONES_PER_ROW);
-//			downZoneID = zoneDown.getID();	
+			zoneDown = connectToNewZone(ZONES_PER_ROW);
+			if(zoneDown != null)
+				downZoneID = zoneDown.getID();	
 		}
 		
 		try {	
 			leftZoneID = zoneLeft.getID();
 		} catch (RemoteException  | NullPointerException e) {
-//			zoneLeft = connectToNewZone(-1);
-//			leftZoneID = zoneLeft.getID();
+			zoneLeft = connectToNewZone(-1);
+			if(zoneLeft != null)
+				leftZoneID = zoneLeft.getID();
 		}
 		
 		try {	
 			rightZoneID = zoneRight.getID();
 			
 		} catch (RemoteException  | NullPointerException e) {
-//			zoneRight = connectToNewZone(1);
-//			rightZoneID = zoneRight.getID();
+			zoneRight = connectToNewZone(1);
+			if(zoneRight != null)
+				rightZoneID = zoneRight.getID();
 		}
 		
 		if(upZoneID!=-1) {
