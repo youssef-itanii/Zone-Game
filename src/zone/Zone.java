@@ -203,8 +203,12 @@ public class Zone implements IZone{
             for (int j = 0 ;j < N; j++) {
                     if(board[i][j] == null)
                     	generatedMap+="0 ";
-                    else
-                        generatedMap+="P ";
+					else
+						try {
+							generatedMap+=((char)board[i][j].getID())+" ";
+						} catch (RemoteException e) {
+							generatedMap+="? ";
+						}
                 } 
             if(i != N-1)
             	generatedMap+= "= ";
@@ -366,7 +370,7 @@ public class Zone implements IZone{
     			int neighborID;
     			try {
     				CLIMessage.DisplayMessage("Sending message to neighbor @ row"+row+" col "+col, false);
-    				neighbor.recieveMessage("Hello" , "Player "+sender.getID());
+    				neighbor.recieveMessage("Hello" , "Player "+(char)sender.getID());
     				neighborID = neighbor.getID();
 //    				sender.recieveMessage("Hello!", "Player "+neighborID);
     				
@@ -375,7 +379,7 @@ public class Zone implements IZone{
     				return;
     			}
     			try {
-					sender.recieveMessage("Hello!", "Player "+neighborID);
+					sender.recieveMessage("Hello!", "Player "+(char)neighborID);
 				} catch (RemoteException e) {
 					unregisterDisconnectedUser(sender, row, col);
     				return;

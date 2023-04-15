@@ -141,12 +141,12 @@ public class Player {
 				if(row >= 0 && col >= 0) {
 					//If it is your current position 
 					if(row == y && col == x) {
-						mapToDisplay+= YOU;
+						mapToDisplay+= markAsYourself();
 					}
 					//If neighbors
 					else if((row == y && (col == x +1 || col == x -1)) || (col == x && (row == y +1 || row == y -1))) {
-						if(cells[col].equals("P")) {
-							mapToDisplay+= OTHER_PLAYER;
+						if((((int)cells[col].charAt(0))>64)) {
+							mapToDisplay+= markAsOtherPlayer(cells[col]);
 							continue;
 						}
 						
@@ -172,6 +172,14 @@ public class Player {
 		
 	}
 	
+	private String markAsOtherPlayer(String character) {
+		return "\u001B[1;47m\u001B[1;31m"+character+"\u001B[0m\u001B[0m";
+	}
+	
+	private String markAsYourself() {
+		char character = (char)client.ID;
+		return "\u001B[1;47m\u001B[1;32m"+character+"\u001B[0m\u001B[0m";
+	}
 	//=============================================================================================
 	public void requestAvaialableZones() {
 		String mess = client.requestAvaialableZones();
