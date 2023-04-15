@@ -383,7 +383,7 @@ public class Zone implements IZone{
 				CLIMessage.DisplayMessage(" Connecting to Zone-"+currentIndex,false);
 				return newZone;
 			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Unable to communicate with Zone-"+currentIndex, null);
+				CLIMessage.DisplayMessage("Unable to communicate with Zone-"+currentIndex, false);
 				newZone = null;
 			}
     	}
