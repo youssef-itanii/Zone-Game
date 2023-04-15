@@ -70,6 +70,8 @@ public class Zone implements IZone{
 		}
         clientList = new ArrayList<IClient>();
         RegsiterManagerNode(); // Connects to the manager
+		zoneLeft = connectWithNewZone(-1);
+		zoneUp = connectWithNewZone(-zonesPerRow);
      
     }
 
@@ -88,10 +90,12 @@ public class Zone implements IZone{
 			} catch (AlreadyBoundException e) {
 				 CLIMessage.DisplayMessage("Unable to bind zone to registry", true);
 			}
-            if(this.ID == MAX_ZONES -1 && manager != null) {
-            	
-            	manager.notifyZones();
-            }
+//            if(this.ID == MAX_ZONES -1 && manager != null) {
+//            	
+//            	manager.notifyZones();
+//            }
+            
+
         } catch (RemoteException e) {
             CLIMessage.DisplayMessage("Unable to register zone", true);
         } catch (NotBoundException e) {
@@ -105,6 +109,7 @@ public class Zone implements IZone{
 	@Override
 	public void setPosition(int index) throws RemoteException {
 		this.index = index;	
+		CLIMessage.DisplayMessage("Index set "+index, false);
 	}
     //===========================================================================
     private void RegisterZones(){
@@ -279,27 +284,28 @@ public class Zone implements IZone{
     }
     //===========================================================================
     private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client , Player.Direction direction){
+    	CLIMessage.DisplayMessage("Attempting to move to new zone", false);
     	try {
 			if(!targetZone.cellIsEmpty(row, col)) {
 				return "";
 			}
-		} catch (RemoteException e1) {
+		} catch (RemoteException | NullPointerException ex) {
 			switch (direction) {
 			case LEFT: 
-				targetZone = handleZoneDisconnect(-1);
+				targetZone = connectWithNewZone(-1);
 				zoneLeft = targetZone;
 				break;
 				
 			case RIGHT: 
-				targetZone = handleZoneDisconnect(1);
+				targetZone = connectWithNewZone(1);
 				zoneRight = targetZone;
 				break;
 			case UP: 
-				targetZone = handleZoneDisconnect(-zonesPerRow);
+				targetZone = connectWithNewZone(-zonesPerRow);
 				zoneUp = targetZone;
 				break;
 			case DOWN: 
-				targetZone = handleZoneDisconnect(zonesPerRow);
+				targetZone = connectWithNewZone(zonesPerRow);
 				zoneDown = targetZone;
 				break;
 			
@@ -342,19 +348,20 @@ public class Zone implements IZone{
 
     //===========================================================================
     
-    private IZone handleZoneDisconnect(int offset) {
+    private IZone connectWithNewZone(int offset) {
     	
     	IZone newZone = null;
     	int currentIndex = index;
     	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
     	
-    	while((currentIndex >= 0 && currentIndex < MAX_ZONES)) {
+    	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
     		currentIndex+= offset;
     		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
     		
     		
 				try {
 					newZone = (IZone) registry.lookup("Zone-"+currentIndex);
+					CLIMessage.DisplayMessage("Attempting to check Zone-"+currentIndex,false);
 				} catch (AccessException e1) {
 					CLIMessage.DisplayMessage("Unable to access registery", false);
 					return null;
@@ -362,15 +369,21 @@ public class Zone implements IZone{
 					CLIMessage.DisplayMessage("Unable to communicate with registery", false);
 					return null;
 				} catch (NotBoundException e1) {
+					CLIMessage.DisplayMessage(" Zone-"+currentIndex+" is not bound",false);
 					continue;
 				}
 			
     	  		
     		try {
-    			if(newZone == null) continue;
+    			if(newZone == null) {
+    				CLIMessage.DisplayMessage(" NULL: Zone-"+currentIndex,false);
+    				continue;
+    			}
 				int zoneId = newZone.getID();
+				CLIMessage.DisplayMessage(" Connecting to Zone-"+currentIndex,false);
 				return newZone;
 			} catch (RemoteException e) {
+				CLIMessage.DisplayMessage("Unable to communicate with Zone-"+currentIndex, null);
 				newZone = null;
 			}
     	}
@@ -491,7 +504,7 @@ public class Zone implements IZone{
             case UP:
                 yUpdated = yCoordinate - 1;
                 if(yUpdated < 0){  // (2) Leave the zone
-                	if(zoneUp == null) return "";
+//                	if(zoneUp == null) return "";
                     return movePlayerToNewZone(xCoordinate , N -1 , zoneUp , client , direction);
                     
                 }
@@ -507,7 +520,7 @@ public class Zone implements IZone{
             case DOWN:
                 yUpdated = yCoordinate + 1;
                 if(yUpdated >= N){
-                	if(zoneDown==null) return "";
+//                	if(zoneDown==null) return "";
                     return movePlayerToNewZone(xCoordinate , 0 , zoneDown , client, direction);
              
                 }
@@ -524,7 +537,7 @@ public class Zone implements IZone{
             case LEFT:
                 xUpdated = xCoordinate - 1;
                 if(xUpdated < 0){
-                	if(zoneLeft==null) return "";
+//                	if(zoneLeft==null) return "";
                     return movePlayerToNewZone(N-1 , yCoordinate , zoneLeft , client, direction);
                 }
                 else
@@ -539,7 +552,7 @@ public class Zone implements IZone{
             case RIGHT:
                 xUpdated = xCoordinate + 1;
                 if(xUpdated >= N) {
-                	if(zoneRight==null) return "";
+//                	if(zoneRight==null) return "";
                     return movePlayerToNewZone(0, yCoordinate , zoneRight , client, direction);
                 }
                 else
