@@ -24,6 +24,7 @@ public class Player {
 	public int x = -1;
 	public int y = -1;
 	public String map = "";
+	public String zonesMap = "";
 	private Scanner scanner;
 	private Client client;
 	int messageCounter = 0;
@@ -51,6 +52,10 @@ public class Player {
 		while(!input.equals("exit")) {
 			System.out.println("Enter direction to move");
 			 input = scanner.nextLine();  // Read user input
+			 if(input.contains("/map")){
+				 client.requestZonesMap();
+				 continue;
+			 }
 			 boolean moved = move(input);
 			 if(moved) displayMap();
 			 else {
@@ -58,6 +63,7 @@ public class Player {
 			 }
 		}
 	}
+
 	//=============================================================================================
 	public void addNewMessage(String message) {
 		messages.add(message);
@@ -141,12 +147,12 @@ public class Player {
 				if(row >= 0 && col >= 0) {
 					//If it is your current position 
 					if(row == y && col == x) {
-						mapToDisplay+= YOU;
+						mapToDisplay+= markAsYourself();
 					}
 					//If neighbors
 					else if((row == y && (col == x +1 || col == x -1)) || (col == x && (row == y +1 || row == y -1))) {
-						if(cells[col].equals("P")) {
-							mapToDisplay+= OTHER_PLAYER;
+						if((((int)cells[col].charAt(0))>64)) {
+							mapToDisplay+= markAsOtherPlayer(cells[col]);
 							continue;
 						}
 						
@@ -172,6 +178,22 @@ public class Player {
 		
 	}
 	
+	
+	public void displayZonesMap() {
+		clearScreen();
+		CLIMessage.DisplayMessage(zonesMap,false);
+		
+	}
+	
+	
+	private String markAsOtherPlayer(String character) {
+		return "\u001B[1;47m\u001B[1;31m"+character+"\u001B[0m\u001B[0m";
+	}
+	
+	private String markAsYourself() {
+		char character = (char)client.ID;
+		return "\u001B[1;47m\u001B[1;32m"+character+"\u001B[0m\u001B[0m";
+	}
 	//=============================================================================================
 	public void requestAvaialableZones() {
 		String mess = client.requestAvaialableZones();

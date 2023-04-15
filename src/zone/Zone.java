@@ -203,8 +203,12 @@ public class Zone implements IZone{
             for (int j = 0 ;j < N; j++) {
                     if(board[i][j] == null)
                     	generatedMap+="0 ";
-                    else
-                        generatedMap+="P ";
+					else
+						try {
+							generatedMap+=((char)board[i][j].getID())+" ";
+						} catch (RemoteException e) {
+							generatedMap+="? ";
+						}
                 } 
             if(i != N-1)
             	generatedMap+= "= ";
@@ -300,10 +304,13 @@ public class Zone implements IZone{
     	
     	IZone newZone = null;
     	int currentIndex = index;
+
     	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
     	
     	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
     		currentIndex+= offset;
+    		if(offset == 1 && currentIndex%ZONES_PER_ROW == 0) return null;
+        	if(offset == -1 && (currentIndex)%ZONES_PER_ROW == 0) return null;
     		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
     		
     		
@@ -344,8 +351,8 @@ public class Zone implements IZone{
     private void sendMessageToNeighbors(int row, int col , IClient sender) {
 
 		messageNeighbor((row - 1 >= 0) , sender, row, col,  row -1 , col);
-		messageNeighbor((row + 1 < N) , sender, row, col, row + 1 , col);
-		messageNeighbor((col - 1 >= 0 ) , sender, row, col, row , col - 1);
+		messageNeighbor(((row + 1 < N) ) , sender, row, col, row + 1 , col);
+		messageNeighbor((col - 1 >= 0) , sender, row, col, row , col - 1);
 		messageNeighbor((col + 1 < N) , sender, row,col ,row , col+1);
 
     }
@@ -366,7 +373,7 @@ public class Zone implements IZone{
     			int neighborID;
     			try {
     				CLIMessage.DisplayMessage("Sending message to neighbor @ row"+row+" col "+col, false);
-    				neighbor.recieveMessage("Hello" , "Player "+sender.getID());
+    				neighbor.recieveMessage("Hello" , "Player "+(char)sender.getID());
     				neighborID = neighbor.getID();
 //    				sender.recieveMessage("Hello!", "Player "+neighborID);
     				
@@ -375,7 +382,7 @@ public class Zone implements IZone{
     				return;
     			}
     			try {
-					sender.recieveMessage("Hello!", "Player "+neighborID);
+					sender.recieveMessage("Hello!", "Player "+(char)neighborID);
 				} catch (RemoteException e) {
 					unregisterDisconnectedUser(sender, row, col);
     				return;
@@ -493,6 +500,77 @@ public class Zone implements IZone{
 	@Override
 	public boolean cellIsEmpty(int row, int col) throws RemoteException {
 		return board[row][col] == null;
+	}
+
+	@Override
+	public String getZonesMap() throws RemoteException {
+		int upZoneID = -1;
+		int downZoneID = -1;
+		int leftZoneID = -1;
+		int rightZoneID = -1;
+		
+		String map = "";
+		try {	
+		
+			upZoneID = zoneUp.getID();
+			
+		} catch (RemoteException | NullPointerException e) {
+			zoneUp = connectToNewZone(-ZONES_PER_ROW);
+			if(zoneUp != null)
+				upZoneID = zoneUp.getID();
+		}
+		
+		
+		try {	
+			downZoneID = zoneDown.getID();
+			
+		} catch (RemoteException | NullPointerException e) {
+			zoneDown = connectToNewZone(ZONES_PER_ROW);
+			if(zoneDown != null)
+				downZoneID = zoneDown.getID();	
+		}
+		
+		try {	
+			leftZoneID = zoneLeft.getID();
+		} catch (RemoteException  | NullPointerException e) {
+			zoneLeft = connectToNewZone(-1);
+			if(zoneLeft != null)
+				leftZoneID = zoneLeft.getID();
+		}
+		
+		try {	
+			rightZoneID = zoneRight.getID();
+			
+		} catch (RemoteException  | NullPointerException e) {
+			zoneRight = connectToNewZone(1);
+			if(zoneRight != null)
+				rightZoneID = zoneRight.getID();
+		}
+		
+		if(upZoneID!=-1) {
+			map+="\tz"+upZoneID+"\n";
+			map+= "\t|\n";
+		}
+		if(leftZoneID!=-1) {
+			map+="z"+leftZoneID+"----";
+			map+="YOU";
+		}
+		if(leftZoneID == -1) {
+			map+="\t YOU";
+		}
+		if(rightZoneID != -1) {
+			map+="----z"+rightZoneID+"\n";
+		}
+		if(rightZoneID == -1) {
+			map+="\n";
+		}
+		
+		if(downZoneID!=-1) {
+			map+= "\t|\n";
+			map+="\tz"+downZoneID;
+		}
+	
+		return map;
 	}
 
 

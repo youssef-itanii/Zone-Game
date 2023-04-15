@@ -17,7 +17,7 @@ public class Client implements IClient{
 	private IManager manager;
 	public IZone zone;
 	private Player player;
-	public int ID;
+	public int ID = 64;
 	public int X;
 	public int Y;
 	
@@ -39,7 +39,7 @@ public class Client implements IClient{
 			manager = (IManager) registry.lookup("Manager");
 			CLIMessage.DisplayMessage("Found manager and registered", false);
 			
-			ID = manager.register(this);
+			ID += manager.register(this);
 			CLIMessage.DisplayMessage("GOT ID "+ID, false);
 		} catch (RemoteException e) {
 
@@ -146,6 +146,16 @@ public class Client implements IClient{
 	@Override
 	public int getID() throws RemoteException {
 		return ID;
+	}
+	//==========================================================================
+	public void requestZonesMap() {
+		try {
+			player.zonesMap = zone.getZonesMap();
+			player.displayZonesMap();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

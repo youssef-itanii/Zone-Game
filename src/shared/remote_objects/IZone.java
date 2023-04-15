@@ -27,5 +27,7 @@ public interface IZone extends Remote{
 	
 	//Check if cell is empty
 	boolean cellIsEmpty(int row, int col) throws RemoteException;
+	
+	String getZonesMap() throws RemoteException;
 
 }
