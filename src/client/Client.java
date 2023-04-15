@@ -6,14 +6,11 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-import manager.Manager;
 import shared.common.CLIMessage;
-import shared.common.Message;
 import shared.common.Player;
 import shared.remote_objects.IClient;
 import shared.remote_objects.IManager;
 import shared.remote_objects.IZone;
-import zone.Zone;
 
 public class Client implements IClient{
 

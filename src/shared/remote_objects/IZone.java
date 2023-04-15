@@ -25,9 +25,6 @@ public interface IZone extends Remote{
 	//Set zone index in the zone array stored in the manager node
 	void setPosition(int index) throws RemoteException;
 	
-	//Connect to all neighboring zones
-	void registerNeighbouringZone()throws RemoteException;
-	
 	//Check if cell is empty
 	boolean cellIsEmpty(int row, int col) throws RemoteException;
 

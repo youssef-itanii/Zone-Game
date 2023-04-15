@@ -20,8 +20,9 @@ public class Manager implements IManager {
 
 	private List<IClient> connectedClients = null;
 	private int registeredZones = 0;
-	private int N;
+	private int NUMBER_OF_ZONES;
 	private int ZONES_PER_ROW;
+	private int PORT;
 	int zoneRow = 0;
 	int zoneCol = 0;
 	Registry registry;
@@ -35,9 +36,10 @@ public class Manager implements IManager {
 	 * Init array for clients
 	 */
 	public Manager() {
+		initManagerConfig();
 		try {
 
-			registry = LocateRegistry.createRegistry(1099);
+			registry = LocateRegistry.createRegistry(PORT);
 			registry.bind("Manager", this);
 			UnicastRemoteObject.exportObject(this , 0);
 
@@ -48,10 +50,16 @@ public class Manager implements IManager {
 			CLIMessage.DisplayMessage("Manager is already bound", true);;
 		}
 		connectedClients = new ArrayList<>();
+		
 		CLIMessage.DisplayMessage("Manager is ready", false);
-		N = AppConfig.getNumberOfZones();
-		ZONES_PER_ROW = AppConfig.getZonePerRow();
 
+		
+	}
+	
+	private void initManagerConfig() {
+		NUMBER_OF_ZONES = AppConfig.getNumberOfZones();
+		ZONES_PER_ROW = AppConfig.getZonePerRow();
+		PORT = AppConfig.getPort();
 	}
     //===========================================================================
 	/***
@@ -79,10 +87,10 @@ public class Manager implements IManager {
 	@Override
 	public int register(IZone zone) {
 
-		if(zoneCol == N - 1) {
+		if(zoneCol == NUMBER_OF_ZONES - 1) {
 			zoneCol = 0;
 			zoneRow ++;
-			if(zoneRow == N) {
+			if(zoneRow == NUMBER_OF_ZONES) {
 				return -1;
 			}
 		}
@@ -131,8 +139,8 @@ public class Manager implements IManager {
 	public void setZone(IClient client, int zoneID) {
 		if(client == null) return ;
 		
-		int row = (zoneID - 1)/N;
-		int col = (zoneID - 1)%N;
+		int row = (zoneID - 1)/NUMBER_OF_ZONES;
+		int col = (zoneID - 1)%NUMBER_OF_ZONES;
 
 		try {
 			IZone selectedZone ;
@@ -177,8 +185,8 @@ public class Manager implements IManager {
 	public String getAvaialbeZones() throws RemoteException {
 		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
 				+ "Please select a zone number from the following range\n"
-				+ "Zones available: " + (N) + "\n"
-				+ "Range: 0 - "+(N));
+				+ "Zones available: " + (NUMBER_OF_ZONES) + "\n"
+				+ "Range: 0 - "+(NUMBER_OF_ZONES));
 
 		return zoneSelectionMessage.toString();
 	}

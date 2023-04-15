@@ -6,10 +6,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 
 import shared.remote_objects.IManager;
@@ -17,7 +14,6 @@ import shared.remote_objects.IZone;
 import shared.common.AppConfig;
 import shared.common.CLIMessage;
 import shared.common.Player;
-import shared.common.Player.Direction;
 import shared.remote_objects.IClient;
 
 import java.util.Random;
@@ -29,33 +25,37 @@ public class Zone implements IZone{
     private IZone zoneDown;
     private IZone zoneLeft;
     private IZone zoneRight;
-    private int leftZoneOffset = 1;
-    private int rightZoneOffset = 1;
-
-    
+ 
     private List<IClient> clientList;
     private IClient[][] board;
     private IManager manager;
     private int ID;
-    private final String REGISTRY_TABLE = "localhost";
-    private final int REGISTRY_PORT = 1099;
-    private final String MANAGER_NAME = "Manager";
+    private String SERVER;
+    private int REGISTRY_PORT;
+    private String MANAGER_NAME = "Manager";
 	private int MAX_ZONES;
-    private final int N;
-    private final int zonesPerRow;
+	//Zone size
+    private int N;
+    private int ZONES_PER_ROW;
     private Registry registry;
     private int index;
-
+    //===========================================================================
     public Zone() {
     	try {
 			UnicastRemoteObject.exportObject(this , 0);
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to export zone", true);
 		}
-    	
-    	N = AppConfig.getZoneSize();
-    	MAX_ZONES = AppConfig.getNumberOfZones();
-    	zonesPerRow = AppConfig.getZonePerRow();
+    
+        try {
+			registry = LocateRegistry.getRegistry(SERVER, REGISTRY_PORT);
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to locate registry in zone", true);
+		}
+        
+        
+        initZoneConfig();
+    	clientList = new ArrayList<IClient>();
         board = new IClient[N][N]; // Initialize the zone nodes
         for(int i=0; i<N; i++){
             for(int j=0; j<N; j++){
@@ -63,20 +63,30 @@ public class Zone implements IZone{
             }
         }
         
-        try {
-			registry = LocateRegistry.getRegistry(REGISTRY_TABLE, REGISTRY_PORT);
-		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to locate registry in zone", true);
-		}
-        clientList = new ArrayList<IClient>();
-        RegsiterManagerNode(); // Connects to the manager
-		zoneLeft = connectWithNewZone(-1);
-		zoneUp = connectWithNewZone(-zonesPerRow);
+        //Register with manager node
+        RegsiterManagerNode(); 
+        
+        //Set up connections with the left and upper zones
+        connectToPreviousZones();
      
     }
 
+    private void initZoneConfig() {
+    	N = AppConfig.getZoneSize();
+    	MAX_ZONES = AppConfig.getNumberOfZones();
+    	ZONES_PER_ROW = AppConfig.getZonePerRow();
+    	SERVER= AppConfig.getServerAddress();
+    	REGISTRY_PORT=AppConfig.getPort();
+    }
+    
+    //connects to the previously created zones located to the left and above the zone
+    private void connectToPreviousZones() {
+		zoneLeft = connectToNewZone(-1);
+		zoneUp = connectToNewZone(-ZONES_PER_ROW);
+    }
+    //===========================================================================
     /**
-     * Register this node to the Manager
+     * Register zone in the Manager node and binds the zone to the registry
      */
     public void RegsiterManagerNode(){
         try {
@@ -90,12 +100,6 @@ public class Zone implements IZone{
 			} catch (AlreadyBoundException e) {
 				 CLIMessage.DisplayMessage("Unable to bind zone to registry", true);
 			}
-//            if(this.ID == MAX_ZONES -1 && manager != null) {
-//            	
-//            	manager.notifyZones();
-//            }
-            
-
         } catch (RemoteException e) {
             CLIMessage.DisplayMessage("Unable to register zone", true);
         } catch (NotBoundException e) {
@@ -111,79 +115,20 @@ public class Zone implements IZone{
 		this.index = index;	
 		CLIMessage.DisplayMessage("Index set "+index, false);
 	}
-    //===========================================================================
-    private void RegisterZones(){
-
-            try {
-            	zoneUp = manager.getNeighborZone(index - zonesPerRow);
-            	if(zoneUp == null) {
-            		CLIMessage.DisplayMessage("No upper zone", false);
-            	}
-            	else {
-                    CLIMessage.DisplayMessage("Upper zone registered", false);
-            	}
-
-            } catch (RemoteException e) {
-                CLIMessage.DisplayMessage("Unable to register upper zone", true);
-            }
-        
-            try {
-               
-            	zoneDown = manager.getNeighborZone(index + zonesPerRow);
-            	if(zoneDown == null) {
-            		CLIMessage.DisplayMessage("No bottom zone", false);
-            	}
-            	else {
-                    CLIMessage.DisplayMessage("Bottom zone registered", false);
-            	}
-            } catch (RemoteException e) {
-                CLIMessage.DisplayMessage("Unable to register bottom zone", true);
-            }
-        
-
-            try {
-            	if((ID)%zonesPerRow !=0 ) {
-	            	zoneLeft = manager.getNeighborZone(index - leftZoneOffset);
-	            	if(zoneLeft == null) {
-	            		CLIMessage.DisplayMessage("No left zone", false);
-	            	}
-	            	else {
-	                    CLIMessage.DisplayMessage("Left zone registered", false);
-	            	}
-            	}
-            } catch (RemoteException e) {
-                CLIMessage.DisplayMessage("Unable to register left zone", true);
-            }
-        
-
-            try {
-            	if((ID + 1)%zonesPerRow !=0 ) {
-            		            		
-            		zoneRight = manager.getNeighborZone(index + rightZoneOffset);
-            		if(zoneRight == null) {
-            			CLIMessage.DisplayMessage("No right zone", false);
-            		}
-            		else {
-            			CLIMessage.DisplayMessage("Right zone registered", false);
-            		}
-            	}
-            } catch (RemoteException e) {
-                CLIMessage.DisplayMessage("Unable to register bottom zone", true);
-            }  
-    }
+	
     //===========================================================================
     /**
-     * Add client to the zone
-     * @param client
-     * @throws RemoteException
+     * Add client to a zone
      */
 	@Override
     public void register(IClient client , int row , int col) {
+		//If the row and column were not set, select a random location
 		if(row == -1 || col == -1) {
 			Random rand = new Random();
 			
-			col = rand.nextInt(N); // TODO: Maybe ask input position
-			row = rand.nextInt(N); // TODO: Maybe ask input position
+			col = rand.nextInt(N);
+			row = rand.nextInt(N);
+			//Keep on trying until we get a free cell
 			while(board[row][col] != null){
 				col = rand.nextInt(N);
 				row = rand.nextInt(N);
@@ -212,9 +157,7 @@ public class Zone implements IZone{
     //===========================================================================
     /**
      * Remove the registered client from the zone
-     * todo: maybe check if the zone has the client
      * @param client
-     * @throws RemoteException
      */
     public void unregister(IClient client) {
     	
@@ -252,7 +195,6 @@ public class Zone implements IZone{
      * @param client
      * @param direction
      * @return
-     * @throws RemoteException
      */
    
     private String GenerateUpdatedMapString() {
@@ -285,27 +227,29 @@ public class Zone implements IZone{
     //===========================================================================
     private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client , Player.Direction direction){
     	CLIMessage.DisplayMessage("Attempting to move to new zone", false);
+    	//attempt to check if the cell is free
     	try {
 			if(!targetZone.cellIsEmpty(row, col)) {
 				return "";
 			}
 		} catch (RemoteException | NullPointerException ex) {
+			//Handle unavailable zones based on the direction the user is taking
 			switch (direction) {
 			case LEFT: 
-				targetZone = connectWithNewZone(-1);
+				targetZone = connectToNewZone(-1);
 				zoneLeft = targetZone;
 				break;
 				
 			case RIGHT: 
-				targetZone = connectWithNewZone(1);
+				targetZone = connectToNewZone(1);
 				zoneRight = targetZone;
 				break;
 			case UP: 
-				targetZone = connectWithNewZone(-zonesPerRow);
+				targetZone = connectToNewZone(-ZONES_PER_ROW);
 				zoneUp = targetZone;
 				break;
 			case DOWN: 
-				targetZone = connectWithNewZone(zonesPerRow);
+				targetZone = connectToNewZone(ZONES_PER_ROW);
 				zoneDown = targetZone;
 				break;
 			
@@ -347,8 +291,12 @@ public class Zone implements IZone{
     	
 
     //===========================================================================
-    
-    private IZone connectWithNewZone(int offset) {
+    /***
+     * Searches for the next available zone to connect to
+     * @param offset: offset required to increment the index 
+     * @return
+     */
+    private IZone connectToNewZone(int offset) {
     	
     	IZone newZone = null;
     	int currentIndex = index;
@@ -379,6 +327,7 @@ public class Zone implements IZone{
     				CLIMessage.DisplayMessage(" NULL: Zone-"+currentIndex,false);
     				continue;
     			}
+    			//To make sure that the zone is still active, try getting the ID
 				int zoneId = newZone.getID();
 				CLIMessage.DisplayMessage(" Connecting to Zone-"+currentIndex,false);
 				return newZone;
@@ -401,6 +350,15 @@ public class Zone implements IZone{
 
     }
     //===========================================================================
+    /***
+     * 
+     * @param exp: expression that tells us if the selected row/col is within bounds
+     * @param sender: client sending the message
+     * @param senderRow: row where the client is located
+     * @param senderCol: col where the client is located
+     * @param row target: row
+     * @param col target: col
+     */
     private void messageNeighbor(boolean exp, IClient sender, int senderRow , int senderCol , int row , int col) {
     	if(exp) {
     		IClient neighbor = board[row][col];
@@ -428,52 +386,12 @@ public class Zone implements IZone{
     	}
     }
     //===========================================================================
-//    private void sendMapToNeighbor(boolean exp, IClient sender, int row , int col , String map) {
-//    	if(exp) {
-//    		IClient neighbor = board[row][col];
-//    		if(neighbor!= null) {
-//    			try {
-//    				neighbor.recieveUpdatedMap(map);
-//    				
-//    			} catch (RemoteException e) {
-//    				unregisterDisconnectedUser(neighbor, row, col);
-//    				return;
-//    			}
-//    			try {
-//					CLIMessage.DisplayMessage("Sent updated map to Player "+sender.getID()+" neighbor", false);
-//				} catch (RemoteException e) {
-//    				return;
-//				}
-//    			
-//    		}
-//    	}
-//    }
-    
-    //===========================================================================
     private void broadcastMap(IClient movingClient) {
-
-
-    	int col = -1;
-		
-    	int row = -1;
-		try {
-			row = movingClient.getY();
-			col = movingClient.getX();
-		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to obtain client coordinates", false);
-			return;
-		}
-    	
     	String map = GenerateUpdatedMapString();
-    	
-//    	sendMapToNeighbor((row - 1 >= 0) , movingClient,  row -1 , col, map);
-//    	sendMapToNeighbor((row + 1 < N) , movingClient, row + 1 , col , map);
-//    	sendMapToNeighbor((col - 1 >=1 ) , movingClient, row , col - 1, map);
-//		sendMapToNeighbor((col + 1 < N) , movingClient, row , col+1 , map);
-
     	
     	for(IClient client: clientList) {
     		try {
+    			if(client.equals(movingClient)) continue;
     			client.recieveUpdatedMap(map);
 			} catch (RemoteException e) {
 				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
@@ -503,12 +421,11 @@ public class Zone implements IZone{
         switch(direction){
             case UP:
                 yUpdated = yCoordinate - 1;
-                if(yUpdated < 0){  // (2) Leave the zone
-//                	if(zoneUp == null) return "";
+                if(yUpdated < 0){ 
                     return movePlayerToNewZone(xCoordinate , N -1 , zoneUp , client , direction);
                     
                 }
-                else{ // (3) Within the zone
+                else{ 
                     if(!playerCanMove(yUpdated, xCoordinate))
                         return "";
                     else{
@@ -520,7 +437,6 @@ public class Zone implements IZone{
             case DOWN:
                 yUpdated = yCoordinate + 1;
                 if(yUpdated >= N){
-//                	if(zoneDown==null) return "";
                     return movePlayerToNewZone(xCoordinate , 0 , zoneDown , client, direction);
              
                 }
@@ -537,7 +453,6 @@ public class Zone implements IZone{
             case LEFT:
                 xUpdated = xCoordinate - 1;
                 if(xUpdated < 0){
-//                	if(zoneLeft==null) return "";
                     return movePlayerToNewZone(N-1 , yCoordinate , zoneLeft , client, direction);
                 }
                 else
@@ -552,7 +467,6 @@ public class Zone implements IZone{
             case RIGHT:
                 xUpdated = xCoordinate + 1;
                 if(xUpdated >= N) {
-//                	if(zoneRight==null) return "";
                     return movePlayerToNewZone(0, yCoordinate , zoneRight , client, direction);
                 }
                 else
@@ -569,13 +483,6 @@ public class Zone implements IZone{
                 return "";
         }
     }
-    //===========================================================================
-
-	@Override
-	public void registerNeighbouringZone() {
-		   RegisterZones();
-		
-	}
     //===========================================================================
 	@Override
 	public int getID() throws RemoteException {
