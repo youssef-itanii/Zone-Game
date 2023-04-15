@@ -137,12 +137,14 @@ public class Zone implements IZone{
         
 
             try {
-            	zoneLeft = manager.getNeighborZone(index - leftZoneOffset);
-            	if(zoneLeft == null) {
-            		CLIMessage.DisplayMessage("No left zone", false);
-            	}
-            	else {
-                    CLIMessage.DisplayMessage("Left zone registered", false);
+            	if((ID)%zonesPerRow !=0 ) {
+	            	zoneLeft = manager.getNeighborZone(index - leftZoneOffset);
+	            	if(zoneLeft == null) {
+	            		CLIMessage.DisplayMessage("No left zone", false);
+	            	}
+	            	else {
+	                    CLIMessage.DisplayMessage("Left zone registered", false);
+	            	}
             	}
             } catch (RemoteException e) {
                 CLIMessage.DisplayMessage("Unable to register left zone", true);
@@ -150,12 +152,15 @@ public class Zone implements IZone{
         
 
             try {
-                zoneRight = manager.getNeighborZone(index + rightZoneOffset);
-            	if(zoneRight == null) {
-            		CLIMessage.DisplayMessage("No right zone", false);
-            	}
-            	else {
-                    CLIMessage.DisplayMessage("Right zone registered", false);
+            	if((ID + 1)%zonesPerRow !=0 ) {
+            		            		
+            		zoneRight = manager.getNeighborZone(index + rightZoneOffset);
+            		if(zoneRight == null) {
+            			CLIMessage.DisplayMessage("No right zone", false);
+            		}
+            		else {
+            			CLIMessage.DisplayMessage("Right zone registered", false);
+            		}
             	}
             } catch (RemoteException e) {
                 CLIMessage.DisplayMessage("Unable to register bottom zone", true);
@@ -247,7 +252,7 @@ public class Zone implements IZone{
    
     private String GenerateUpdatedMapString() {
 		String generatedMap = "";
-        for (int i = 0; i < N; i++) {     
+		for (int i = 0; i < N; i++) {     
             for (int j = 0 ;j < N; j++) {
                     if(board[i][j] == null)
                     	generatedMap+="0 ";
@@ -260,6 +265,7 @@ public class Zone implements IZone{
         generatedMap.replace("\t", "");
         return generatedMap;	
 	}
+   
     //===========================================================================
 
     private boolean playerCanMove(int row , int col){
@@ -377,7 +383,7 @@ public class Zone implements IZone{
 
 		messageNeighbor((row - 1 >= 0) , sender, row, col,  row -1 , col);
 		messageNeighbor((row + 1 < N) , sender, row, col, row + 1 , col);
-		messageNeighbor((col - 1 >=1 ) , sender, row, col, row , col - 1);
+		messageNeighbor((col - 1 >= 0 ) , sender, row, col, row , col - 1);
 		messageNeighbor((col + 1 < N) , sender, row,col ,row , col+1);
 
     }
@@ -388,8 +394,10 @@ public class Zone implements IZone{
     		if(neighbor!= null) {
     			int neighborID;
     			try {
+    				CLIMessage.DisplayMessage("Sending message to neighbor @ row"+row+" col "+col, false);
     				neighbor.recieveMessage("Hello" , "Player "+sender.getID());
     				neighborID = neighbor.getID();
+//    				sender.recieveMessage("Hello!", "Player "+neighborID);
     				
     			} catch (RemoteException e) {
     				unregisterDisconnectedUser(neighbor, row, col);

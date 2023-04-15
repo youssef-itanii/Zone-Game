@@ -21,6 +21,7 @@ public class Manager implements IManager {
 	private List<IClient> connectedClients = null;
 	private int registeredZones = 0;
 	private int N;
+	private int ZONES_PER_ROW;
 	int zoneRow = 0;
 	int zoneCol = 0;
 	List<IZone> zones;
@@ -49,6 +50,7 @@ public class Manager implements IManager {
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
 		N = AppConfig.getNumberOfZones();
+		ZONES_PER_ROW = AppConfig.getZonePerRow();
 		zones = new ArrayList<IZone>();
 	}
     //===========================================================================
