@@ -62,6 +62,7 @@ public class Player {
 	public void addNewMessage(String message) {
 		messages.add(message);
 		messageCounter++;
+		CLIMessage.DisplayMessage(message, false);
 		//To avoid crowding the command line, set a limit to the number of messages
 		//Remove the first MESSAGE_LIMIT - 1 messages from the history list
 		if(messageCounter == MESSAGE_LIMIT - 1) {

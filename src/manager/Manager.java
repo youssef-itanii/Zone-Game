@@ -21,9 +21,10 @@ public class Manager implements IManager {
 	private List<IClient> connectedClients = null;
 	private int registeredZones = 0;
 	private int N;
+	private int ZONES_PER_ROW;
 	int zoneRow = 0;
 	int zoneCol = 0;
-	List<IZone> zones;
+	Registry registry;
 
 
 	//=========================================================================
@@ -36,7 +37,7 @@ public class Manager implements IManager {
 	public Manager() {
 		try {
 
-			Registry registry = LocateRegistry.createRegistry(1099);
+			registry = LocateRegistry.createRegistry(1099);
 			registry.bind("Manager", this);
 			UnicastRemoteObject.exportObject(this , 0);
 
@@ -49,7 +50,8 @@ public class Manager implements IManager {
 		connectedClients = new ArrayList<>();
 		CLIMessage.DisplayMessage("Manager is ready", false);
 		N = AppConfig.getNumberOfZones();
-		zones = new ArrayList<IZone>();
+		ZONES_PER_ROW = AppConfig.getZonePerRow();
+
 	}
     //===========================================================================
 	/***
@@ -93,35 +95,16 @@ public class Manager implements IManager {
 			CLIMessage.DisplayMessage("Unable to register new zone", false);
 			return -1;
 		}
-		zones.add(zone);
 		zoneCol++;
 		registeredZones++;
 		return currentIndex;
 
 	}
 	
-	private void prepareAllZones() {
-		for(int i = 0; i < N; i++) {
-			
-			try {
-				if(zones.get(i) != null)
-				zones.get(i).registerNeighbouringZone();
-			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Unable to notify zone to register with neighbors", false);
-			}
-			
-		}
-	}
     //===========================================================================
 	@Override
 	public IZone getNeighborZone(int index) {
-	
-		try {			
-			return zones.get(index);
-		}
-		catch (IndexOutOfBoundsException ex) {
-			return null;
-		}
+	return null;
 	}
 	//===============================CLIENT REMOVAL==========================================
 	@Override
@@ -154,10 +137,10 @@ public class Manager implements IManager {
 		try {
 			IZone selectedZone ;
 			try {
-				selectedZone = zones.get(zoneID - 1);				
+				selectedZone = (IZone) registry.lookup("Zone-"+zoneID);			
 			}
 			catch(Exception ex) {
-				System.out.println("OUT OF BOUNDS?");
+				System.out.println("unablet to connect to zone");
 				return;
 			}
 			
@@ -200,11 +183,7 @@ public class Manager implements IManager {
 		return zoneSelectionMessage.toString();
 	}
     //===========================================================================
-	@Override
-	public void notifyZones()  {
-		prepareAllZones();
-			
-	}
+
 
 
 
