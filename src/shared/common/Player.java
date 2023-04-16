@@ -262,7 +262,7 @@ public class Player {
 		CLIMessage.DisplayMessage("\n\u001B[1;92mRegistered to zone "+client.getZoneID()+"\u001B[0m", false);
 		CLIMessage.DisplayMessage("\u001B[1;92mStarting game... \u001B[0m", false);
 		try {
-			Thread.sleep(2000);
+			Thread.sleep(1200);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
