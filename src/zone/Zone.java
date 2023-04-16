@@ -222,6 +222,7 @@ public class Zone implements IZone{
 							generatedMap+=((char)board[i][j].getID())+" ";
 						} catch (RemoteException e) {
 							generatedMap+="? ";
+							unregisterDisconnectedUser(board[i][j], i, j);
 						}
                 } 
             if(i != N-1)

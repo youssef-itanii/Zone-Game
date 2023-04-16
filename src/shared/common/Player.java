@@ -32,10 +32,26 @@ public class Player {
 	public boolean hasZone = false;
 	public List<String> messages;
 	
+	
+	private String UP;
+	private String DOWN;
+	private String LEFT;
+	private String RIGHT;
+	
 	public Player() {
 		messages = new ArrayList<String>();
+		initPlayerConfig();
 	}
 	//=============================================================================================
+	
+	private void initPlayerConfig() {
+		List<String> movementKeys = AppConfig.getMovementKeys();
+		UP = movementKeys.get(0);
+		DOWN = movementKeys.get(1);
+		LEFT = movementKeys.get(2);
+		RIGHT = movementKeys.get(3);
+	}
+	
 	public void start() {
 
 		clearScreen();
@@ -103,26 +119,27 @@ public class Player {
 		Direction direction;
 		int future_x = x;
 		int future_y = y;
-		switch(input.toLowerCase()) {
-			case "w":
-				direction = Direction.UP;
-				future_y = y-1;
-				break;
-			case "a":
-				direction = Direction.LEFT;
-				future_x = x - 1;
-				break;
-			case "s":
-				direction = Direction.DOWN;
-				future_y = y + 1;
-				break;
-			case "d":
-				direction = Direction.RIGHT;
-				future_x = x + 1;
-				break;
-			default:
-				return false;
+		if(input.equals(UP)) {
+			direction = Direction.UP;
+			future_y = y-1;
 		}
+		else if(input.equals(DOWN)) {
+			direction = Direction.DOWN;
+			future_y = y + 1;
+		}
+		else if(input.equals(LEFT)) {
+			direction = Direction.LEFT;
+			future_x = x - 1;
+		}
+		else if(input.equals(RIGHT)) {
+			direction = Direction.RIGHT;
+			future_x = x + 1;
+		}
+		else {
+			return false;
+		}
+		
+
 		String mapResp = client.requestMovement(direction);
 		//"" means that the map did not update
 		if(!mapResp.equals("")) {
@@ -180,6 +197,10 @@ public class Player {
 			mapToDisplay+="=";
 		}
 		clearScreen();
+		int zoneId = client.getZoneID();
+		if(zoneId == -1) {
+			CLIMessage.DisplayMessage("System: Communication with Zone has failed. Disconnected." , true);
+		}
 		System.out.println(map);
 		System.out.println("\u001B[1;92m====================  ZONE "+client.getZoneID()+"  ====================\u001B[0m");
 		System.out.println("\u001B[1;92m====================  YOUR ID: "+(char)client.ID+"  ====================\u001B[0m");
@@ -249,7 +270,7 @@ public class Player {
 		
 	}
 	//=============================================================================================
-	private void clearScreen() {
+	public void clearScreen() {
 		System.out.print("\033[H\033[2J");  
 		System.out.flush();
 	}

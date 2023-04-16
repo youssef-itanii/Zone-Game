@@ -96,7 +96,8 @@ public class Client implements IClient{
 			return zone.movePlayer(this, direction);
 
 		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to request coordinates update", false);
+			player.clearScreen();
+			CLIMessage.DisplayMessage("System: Communication with Zone has failed. Disconnected." , true);
 		}
 
 		return "";
@@ -153,8 +154,8 @@ public class Client implements IClient{
 			player.zonesMap = zone.getZonesMap();
 			player.displayZonesMap();
 		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			player.clearScreen();
+			CLIMessage.DisplayMessage("System: Communication with Zone has failed. Disconnected." , true);
 		}
 	}
 
