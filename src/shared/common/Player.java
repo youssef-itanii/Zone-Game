@@ -138,9 +138,14 @@ public class Player {
 	//=============================================================================================
 	public void displayMap() {
 		String[] sections = map.split(" = ");
-		String mapToDisplay = "";
+		String mapToDisplay = "==";
 		for(int row = 0; row < sections.length; row ++) {
 			
+			mapToDisplay+="=";
+		}
+		mapToDisplay+="\n";
+		for(int row = 0; row < sections.length; row ++) {
+			mapToDisplay+="|";
 			String[] cells = sections[row].split(" ");
 			
 			for(int col = 0; col < cells.length; col++) {
@@ -164,14 +169,20 @@ public class Player {
 					}
 					
 				}
+				
 			
 			}
-			mapToDisplay+="\n";
+			mapToDisplay+="|\n";
+		}
+		mapToDisplay+="==";
+		for(int row = 0; row < sections.length; row ++) {
+			
+			mapToDisplay+="=";
 		}
 		clearScreen();
 		System.out.println(map);
 		System.out.println("\u001B[1;92m====================  ZONE "+client.getZoneID()+"  ====================\u001B[0m");
-		System.out.println("\u001B[1;92m====================  YOUR ID: "+client.ID+"  ====================\u001B[0m");
+		System.out.println("\u001B[1;92m====================  YOUR ID: "+(char)client.ID+"  ====================\u001B[0m");
 		System.out.println("\u001B[1;92mYOUR POSITION: \n-ROW: "+this.y+"\n-COL: "+this.x+" \u001B[0m");
 		System.out.println(mapToDisplay);
 		displayMessages();
