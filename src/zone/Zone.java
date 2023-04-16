@@ -31,7 +31,7 @@ public class Zone implements IZone{
     private IManager manager;
     private int ID;
     private String SERVER;
-    private int REGISTRY_PORT;
+    private int PORT;
     private String MANAGER_NAME = "Manager";
 	private int MAX_ZONES;
 	//Zone size
@@ -48,7 +48,7 @@ public class Zone implements IZone{
 		}
     
         try {
-			registry = LocateRegistry.getRegistry(SERVER, REGISTRY_PORT);
+			registry = LocateRegistry.getRegistry(SERVER, PORT);
 		} catch (RemoteException e) {
 			CLIMessage.DisplayMessage("Unable to locate registry in zone", true);
 		}
@@ -75,9 +75,23 @@ public class Zone implements IZone{
     	N = AppConfig.getZoneSize();
     	MAX_ZONES = AppConfig.getNumberOfZones();
     	ZONES_PER_ROW = AppConfig.getZonePerRow();
+    	while(ZONES_PER_ROW == 0) {
+    		ZONES_PER_ROW = AppConfig.getZonePerRow();
+
+    	}
     	SERVER= AppConfig.getServerAddress();
-    	REGISTRY_PORT=AppConfig.getPort();
+    	PORT=AppConfig.getPort();
+    	
+    	CLIMessage.DisplayMessage("==============================", false);
+    	CLIMessage.DisplayMessage("Configuration set:", false);
+    	CLIMessage.DisplayMessage("Zone size: "+N, false);
+    	CLIMessage.DisplayMessage("Max zones: "+MAX_ZONES, false);
+    	CLIMessage.DisplayMessage("Zones per row: "+ZONES_PER_ROW, false);
+    	CLIMessage.DisplayMessage("Server: "+SERVER, false);
+    	CLIMessage.DisplayMessage("Port: "+PORT, false);
+    	CLIMessage.DisplayMessage("==============================", false);
     }
+    
     
     //connects to the previously created zones located to the left and above the zone
     private void connectToPreviousZones() {
@@ -309,8 +323,20 @@ public class Zone implements IZone{
     	
     	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
     		currentIndex+= offset;
-    		if(offset == 1 && currentIndex%ZONES_PER_ROW == 0) return null;
-        	if(offset == -1 && (currentIndex)%ZONES_PER_ROW == 0) return null;
+    		CLIMessage.DisplayMessage(ZONES_PER_ROW+"%"+currentIndex, false);
+    		boolean isNewRow;
+    		boolean isPreviousRow;
+    		if(currentIndex == 0) {
+    			isPreviousRow = false;
+    			isNewRow = false;
+    			
+    		}
+    		else {
+    			isPreviousRow = ZONES_PER_ROW%(currentIndex + 1) == 0; 
+    			isNewRow = ZONES_PER_ROW%(currentIndex) == 0 && index != 0;    			
+    		}
+    		if(offset == 1 && isNewRow) return null;
+        	if(offset == -1 && isPreviousRow) return null;
     		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
     		
     		
@@ -336,6 +362,7 @@ public class Zone implements IZone{
     			}
     			//To make sure that the zone is still active, try getting the ID
 				int zoneId = newZone.getID();
+//				if(newZone.equals(zoneDown) || newZone.equals(zoneRight)) return null;
 				CLIMessage.DisplayMessage(" Connecting to Zone-"+currentIndex,false);
 				return newZone;
 			} catch (RemoteException e) {
