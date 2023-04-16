@@ -1,6 +1,8 @@
 package zone;
+import java.net.MalformedURLException;
 import java.rmi.AccessException;
 import java.rmi.AlreadyBoundException;
+import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -89,7 +91,7 @@ public class Zone implements IZone{
     	CLIMessage.DisplayMessage("Zones per row: "+ZONES_PER_ROW, false);
     	CLIMessage.DisplayMessage("Server: "+SERVER, false);
     	CLIMessage.DisplayMessage("Port: "+PORT, false);
-    	CLIMessage.DisplayMessage("==============================", false);
+    	CLIMessage.DisplayMessage("==============================\n", false);
     }
     
     
@@ -97,6 +99,24 @@ public class Zone implements IZone{
     private void connectToPreviousZones() {
 		zoneLeft = connectToNewZone(-1);
 		zoneUp = connectToNewZone(-ZONES_PER_ROW);
+		if(zoneLeft!= null && zoneUp != null) {
+			int zoneLeftID;
+			int zoneUpID;
+			try {
+				zoneLeftID = zoneLeft.getID();
+			} catch (RemoteException e) {
+				return;
+			}
+			try {
+				zoneUpID = zoneUp.getID();
+			} catch (RemoteException e) {
+				return;
+			}
+			CLIMessage.DisplayMessage("UP: "+zoneUpID+" LEFT "+zoneLeftID, false);
+			if(zoneUpID == zoneLeftID) {
+				zoneUp = null;
+			}
+		}
     }
     //===========================================================================
     /**
@@ -261,6 +281,12 @@ public class Zone implements IZone{
 			case RIGHT: 
 				targetZone = connectToNewZone(1);
 				zoneRight = targetZone;
+	    		if(zoneRight!= null  && zoneDown != null) {
+	    			
+	    			if(zoneRight.equals(zoneDown)) {
+	    				zoneDown = null;
+	    			}
+	    		}
 				break;
 			case UP: 
 				targetZone = connectToNewZone(-ZONES_PER_ROW);
@@ -319,38 +345,25 @@ public class Zone implements IZone{
     	IZone newZone = null;
     	int currentIndex = index;
 
-    	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
+    	CLIMessage.DisplayMessage("*Searching for new zone to connect to", false);
     	
     	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
     		currentIndex+= offset;
-    		CLIMessage.DisplayMessage(ZONES_PER_ROW+"%"+currentIndex, false);
-    		boolean isNewRow;
-    		boolean isPreviousRow;
-    		if(currentIndex == 0) {
-    			isPreviousRow = false;
-    			isNewRow = false;
-    			
-    		}
-    		else {
-    			isPreviousRow = ZONES_PER_ROW%(currentIndex + 1) == 0; 
-    			isNewRow = ZONES_PER_ROW%(currentIndex) == 0 && index != 0;    			
-    		}
-    		if(offset == 1 && isNewRow) return null;
-        	if(offset == -1 && isPreviousRow) return null;
-    		System.out.println("Current index "+currentIndex +" MAX "+MAX_ZONES);
+    		
+    		
     		
     		
 				try {
 					newZone = (IZone) registry.lookup("Zone-"+currentIndex);
-					CLIMessage.DisplayMessage("Attempting to check Zone-"+currentIndex,false);
+					CLIMessage.DisplayMessage("*Attempting to check Zone-"+currentIndex,false);
 				} catch (AccessException e1) {
-					CLIMessage.DisplayMessage("Unable to access registery", false);
+					CLIMessage.DisplayMessage("ERROR:Unable to access registery", false);
 					return null;
 				} catch (RemoteException e1) {
-					CLIMessage.DisplayMessage("Unable to communicate with registery", false);
+					CLIMessage.DisplayMessage("ERROR: Unable to communicate with registery", false);
 					return null;
 				} catch (NotBoundException e1) {
-					CLIMessage.DisplayMessage(" Zone-"+currentIndex+" is not bound",false);
+					CLIMessage.DisplayMessage("ERROR: Zone-"+currentIndex+" is not bound",false);
 					continue;
 				}
 			
@@ -362,15 +375,55 @@ public class Zone implements IZone{
     			}
     			//To make sure that the zone is still active, try getting the ID
 				int zoneId = newZone.getID();
+				
+				
+				if(offset == -1) {
+					if(currentIndex != index -1) {
+						changeBinding(index , index - 1);
+					}
+					else {
+			    		boolean isPreviousRow;
+			    		if(currentIndex == 0) {
+			    			isPreviousRow = false;
+			    			
+			    		}
+			    		else {
+			    			isPreviousRow = ZONES_PER_ROW%(currentIndex) == 0 && index == currentIndex + 1; 			
+			    		}
+			        	if(offset == -1 && isPreviousRow) {
+			    			CLIMessage.DisplayMessage("*Will not connect to zone-"+currentIndex+"(Violation of topology)", false);
+			        		return null;
+			        	}
+					}
+				}
+				if(offset == 1) {
+
+					if(index != 0) {
+		    			if(index+1 == currentIndex && (currentIndex)%ZONES_PER_ROW == 0) {
+		    				CLIMessage.DisplayMessage("currentIndex "+currentIndex, false);
+			    			CLIMessage.DisplayMessage("*Will not connect to zone-"+currentIndex+"(Violation of topology)", false);
+			    			return null;
+		    			}
+		    		}
+					if(currentIndex != index + 1) {
+						changeBinding(index , index + 1);
+					}
+		    
+
+					
+				}
+				
+			
 //				if(newZone.equals(zoneDown) || newZone.equals(zoneRight)) return null;
-				CLIMessage.DisplayMessage(" Connecting to Zone-"+currentIndex,false);
+				CLIMessage.DisplayMessage("*Connecting to zone with index "+currentIndex,false);
+		    	System.out.println("\n\n");
 				return newZone;
 			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Unable to communicate with Zone-"+currentIndex, false);
+				CLIMessage.DisplayMessage("ERROR: Unable to communicate with with zone of index "+currentIndex, false);
 				newZone = null;
 			}
     	}
-    	System.out.println("No zone found");
+    	System.out.println("FAIL: No zone found\n\n");
     	return null;    
 
     }
@@ -449,7 +502,9 @@ public class Zone implements IZone{
 	public String movePlayer(IClient client, Player.Direction direction) throws RemoteException{
         int xCoordinate = client.getX();
         int yCoordinate = client.getY();
-        CLIMessage.DisplayMessage("Player requested movement", false);
+        char playerCharacter = (char)client.getID();
+        String eventPrefix = "# Player "+playerCharacter+" ";
+        CLIMessage.DisplayMessage(eventPrefix+"requested movement", false);
         int yUpdated;
         int xUpdated;
         switch(direction){
@@ -464,7 +519,7 @@ public class Zone implements IZone{
                         return "";
                     else{
 
-                        CLIMessage.DisplayMessage("Player moved up", false);
+                        CLIMessage.DisplayMessage(eventPrefix+"moved up", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yUpdated, xCoordinate);
                     }
                 }
@@ -479,7 +534,7 @@ public class Zone implements IZone{
                     if(!playerCanMove(yUpdated, xCoordinate))
                         return "";
                     else{
-                        CLIMessage.DisplayMessage("Player moved down", false);
+                        CLIMessage.DisplayMessage(eventPrefix+"moved down", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yUpdated, xCoordinate);
                     }
                 }
@@ -494,7 +549,7 @@ public class Zone implements IZone{
 	                if(!playerCanMove(yCoordinate, xUpdated))
 	                    return "";
 	                else{
-	                    CLIMessage.DisplayMessage("Player moved left", false);
+	                    CLIMessage.DisplayMessage(eventPrefix+"moved left", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
 	                }
                 }
@@ -508,12 +563,12 @@ public class Zone implements IZone{
 	                if(!playerCanMove(yCoordinate, xUpdated))
 	                    return "";
 	                else{
-	                    CLIMessage.DisplayMessage("Player moved right", false);
+	                    CLIMessage.DisplayMessage(eventPrefix+"moved right", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
 	                }
                 }
             default:
-            	 CLIMessage.DisplayMessage("Player requested invalid movment", false);
+            	 CLIMessage.DisplayMessage(eventPrefix+"requested invalid movment", false);
                 return "";
         }
     }
@@ -601,7 +656,39 @@ public class Zone implements IZone{
 	}
 
 
+	private boolean changeBinding(int prevIndex, int newIndex) {
+		try {
+			CLIMessage.DisplayMessage("*Unbinding zone-"+ID+" from registry", false);
+			try {
+				Naming.unbind("Zone-"+prevIndex);
+			} catch (RemoteException e) {
+				CLIMessage.DisplayMessage("ERROR: zone is unavailable", false);
+				return false;
+			}
+		} catch (MalformedURLException e) {
+			CLIMessage.DisplayMessage("ERROR: Unable to unbind zone", false);
+			return false;
+		} catch (NotBoundException e) {
+			CLIMessage.DisplayMessage("ERROR: This Zone is not bound. Exiting", true);
+		}
+		
 
+		try {
+			CLIMessage.DisplayMessage("*Rebinding zone-"+ID+" with index "+index, false);
+			try {
+				Naming.rebind("Zone-"+newIndex, this);
+			} catch (RemoteException e) {
+				CLIMessage.DisplayMessage("ERROR: zone is unavailable", false);
+				return false;
+			}
+		} catch (MalformedURLException e) {
+			CLIMessage.DisplayMessage("ERROR: Unable to unbind zone", false);
+			return false;
+		}
+		
+		CLIMessage.DisplayMessage("Index updated to "+index, false);
+		return true;
+	}
 
     
 
