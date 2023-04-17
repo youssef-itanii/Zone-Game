@@ -17,6 +17,7 @@ import shared.common.Player;
 import shared.remote_objects.IClient;
 
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 
 public class Zone implements IZone{
@@ -25,7 +26,7 @@ public class Zone implements IZone{
     private IZone zoneDown;
     private IZone zoneLeft;
     private IZone zoneRight;
- 
+    private Semaphore boardLock;
     private List<IClient> clientList;
     private IClient[][] board;
     private IManager manager;
@@ -39,7 +40,7 @@ public class Zone implements IZone{
     private int ZONES_PER_ROW;
     private Registry registry;
     private int index;
-    //===========================================================================
+    //============================ZONE INITIALIZATION===============================================
     public Zone() {
     	try {
 			UnicastRemoteObject.exportObject(this , 0);
@@ -68,12 +69,13 @@ public class Zone implements IZone{
         
         //Set up connections with the left and upper zones
         connectToPreviousZones();
-     
+        
+        this.boardLock = new Semaphore(1);
         
     	CLIMessage.DisplayMessage("=======================\n"
     			+ "|||ZONE IS READY|||\n", false);
     }
-
+    
     private void initZoneConfig() {
     	N = AppConfig.getZoneSize();
     	MAX_ZONES = AppConfig.getNumberOfZones();
@@ -101,217 +103,6 @@ public class Zone implements IZone{
 		zoneLeft = connectToNewZone(-1);
 		zoneUp = connectToNewZone(-ZONES_PER_ROW);
     }
-    //===========================================================================
-    /**
-     * Register zone in the Manager node and binds the zone to the registry
-     */
-    public void RegsiterManagerNode(){
-        try {
-            manager = (IManager) registry.lookup(MANAGER_NAME);
-            this.ID = manager.register(this);
-            CLIMessage.DisplayMessage("Found manager and registered with ID "+ID, false);
-            try {
-				registry.bind("Zone-"+ID, this);
-				CLIMessage.DisplayMessage("Binded Zone-"+ID, false);
-
-			} catch (AlreadyBoundException e) {
-				 CLIMessage.printError("Unable to bind zone to registry", true);
-			}
-        } catch (RemoteException e) {
-            CLIMessage.printError("Unable to register zone", true);
-        } catch (NotBoundException e) {
-            CLIMessage.printError("Unable to locate Manager in registry for zone", true);
-        }
-    }
-    //===========================================================================
-    /***
-     * Sets position of the zone in the zone array stored in the manager
-     */
-	@Override
-	public void setPosition(int index) throws RemoteException {
-		this.index = index;	
-		CLIMessage.DisplayMessage("Index set "+index, false);
-	}
-	
-    //===========================================================================
-    /**
-     * Add client to a zone
-     */
-	@Override
-    public void register(IClient client , int row , int col) {
-		//If the row and column were not set, select a random location
-		if(row == -1 || col == -1) {
-			Random rand = new Random();
-			
-			col = rand.nextInt(N);
-			row = rand.nextInt(N);
-			//Keep on trying until we get a free cell
-			while(board[row][col] != null){
-				col = rand.nextInt(N);
-				row = rand.nextInt(N);
-			}
-		}
-        board[row][col] = client;
-        clientList.add(client);
-        try {
-			client.setZone(this);
-		} catch (RemoteException e2) {
-			CLIMessage.DisplayMessage("Unable to set zone to client", false);
-		}
-        try {
-			client.setCoordinates(row, col);
-		} catch (RemoteException e1) {
-			CLIMessage.DisplayMessage("Unable to set coordinates to client", false);
-		}
-        try {
-			client.recieveUpdatedMap(GenerateUpdatedMapString());
-		} catch (RemoteException e) {
-			CLIMessage.DisplayMessage("Unable to generate map for client", false);
-		}
-        CLIMessage.DisplayMessage("Registered client", false);
-        broadcastMap(client);
-    }
-    //===========================================================================
-    /**
-     * Remove the registered client from the zone
-     * @param client
-     */
-    public void unregister(IClient client) {
-    	
-    		int xCoordinate;
-			try {
-				xCoordinate = client.getX();
-				int yCoordinate = client.getY();
-				board[yCoordinate][xCoordinate] = null;
-				CLIMessage.DisplayMessage("||Player "+(char)client.getID()+ " has left the game.||", false);
-			} catch (RemoteException e) {
-				CLIMessage.printError("Connection has been lost with a client", false);
-			}
-    		
-    	
-        clientList.remove(client);
-        broadcastMap(client);
-        
-    }
-    
-    private void unregisterDisconnectedUser(IClient client , int row , int col) {
-		CLIMessage.DisplayMessage("Unable to communicate with client. Unregistering client...", false);
-    	if(clientList.contains(client)) {
-    		clientList.remove(client);
-    	}
-    	
-    	board[row][col] = null;
-    	broadcastMap(client);
-    }
-    //===========================================================================
-    public void placePlayer(IClient client, int y, int x) throws RemoteException{
-        board[y][x] = client;
-    }
-    //===========================================================================
-    /**
-     * Recieve a direction request and update the user with the update
-     * @param client
-     * @param direction
-     * @return
-     */
-   
-    private String GenerateUpdatedMapString() {
-		String generatedMap = "";
-		for (int i = 0; i < N; i++) {     
-            for (int j = 0 ;j < N; j++) {
-                    if(board[i][j] == null)
-                    	generatedMap+="0 ";
-					else
-						try {
-							generatedMap+=((char)board[i][j].getID())+" ";
-						} catch (RemoteException e) {
-							generatedMap+="? ";
-							unregisterDisconnectedUser(board[i][j], i, j);
-						}
-                } 
-            if(i != N-1)
-            	generatedMap+= "= ";
-        }
-        generatedMap.replace("\t", "");
-        return generatedMap;	
-	}
-   
-    //===========================================================================
-
-    private boolean playerCanMove(int row , int col){
-    	if(board[row][col] == null) {
-    		return true;
-    	}
-		return false;
- 
-    }
-    //===========================================================================
-    private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client , Player.Direction direction){
-    	CLIMessage.DisplayMessage("Attempting to move to new zone", false);
-    	//attempt to check if the cell is free
-    	try {
-			if(!targetZone.cellIsEmpty(row, col)) {
-				return "";
-			}
-		} catch (RemoteException | NullPointerException ex) {
-			//Handle unavailable zones based on the direction the user is taking
-			switch (direction) {
-			case LEFT: 
-				targetZone = connectToNewZone(-1);
-				zoneLeft = targetZone;
-				break;
-				
-			case RIGHT: 
-				targetZone = connectToNewZone(1);
-				zoneRight = targetZone;
-				break;
-			case UP: 
-				targetZone = connectToNewZone(-ZONES_PER_ROW);
-				zoneUp = targetZone;
-				break;
-			case DOWN: 
-				targetZone = connectToNewZone(ZONES_PER_ROW);
-				zoneDown = targetZone;
-				break;
-			
-			default:
-				return "";
-			}
-		}
-    	//If there is no new zone, then return null and do nothing
-    	if(targetZone == null) return "";
-		try {
-			if(!targetZone.cellIsEmpty(row, col)) {
-				return "";
-			}
-		} catch (RemoteException e2) {
-			//If the newly connected zone disconnects, then just return an empty string
-			CLIMessage.printError("Cannot communicate with target zone", false);
-			return "";
-		}
-    	unregister(client);
-    	try {
-			targetZone.register(client , row , col);
-			targetZone.placePlayer(client, row, col); // Move to the new zone
-		} catch (RemoteException e1) {
-			CLIMessage.DisplayMessage("ERROR:Cannot communicate with target zone", false);
-			return "";
-		}
-        try {
-			client.setZone(targetZone); // Set client's new zone to target zone
-			CLIMessage.DisplayMessage("*Player left the zone, broadcasting updated map", false);
-			//Broadcast the map first to avoid erasing the messages
-			broadcastMap(client);
-			sendMessageToNeighbors(row , col, client);
-			return "";
-		} catch (RemoteException e) {
-			unregisterDisconnectedUser(client, row, col);
-		}
-		return ""; 
-    }
-    	
-
-    //===========================================================================
     /***
      * Searches for the next available zone to connect to
      * @param offset: offset required to increment the index 
@@ -378,6 +169,241 @@ public class Zone implements IZone{
     	return null;    
 
     }
+    //===========================REGISTRATION================================================
+    /**
+     * Register zone in the Manager node and binds the zone to the registry
+     */
+    public void RegsiterManagerNode(){
+        try {
+            manager = (IManager) registry.lookup(MANAGER_NAME);
+            this.ID = manager.register(this);
+            CLIMessage.DisplayMessage("Found manager and registered with ID "+ID, false);
+            try {
+				registry.bind("Zone-"+ID, this);
+				CLIMessage.DisplayMessage("Binded Zone-"+ID, false);
+
+			} catch (AlreadyBoundException e) {
+				 CLIMessage.printError("Unable to bind zone to registry", true);
+			}
+        } catch (RemoteException e) {
+            CLIMessage.printError("Unable to register zone", true);
+        } catch (NotBoundException e) {
+            CLIMessage.printError("Unable to locate Manager in registry for zone", true);
+        }
+    }
+    /***
+     * Sets position of the zone in the zone array stored in the manager
+     */
+	@Override
+	public void setPosition(int index) throws RemoteException {
+		this.index = index;	
+		CLIMessage.DisplayMessage("Index set "+index, false);
+	}
+	
+    /**
+     * Add client to a zone
+     */
+	@Override
+    public void register(IClient client , int row , int col) {
+		//If the row and column were not set, select a random location
+
+		acquireBoardLock();
+
+		if(row == -1 || col == -1) {
+			Random rand = new Random();
+			
+			col = rand.nextInt(N);
+			row = rand.nextInt(N);
+			//Keep on trying until we get a free cell
+			while(board[row][col] != null){
+				col = rand.nextInt(N);
+				row = rand.nextInt(N);
+			}
+		}
+        board[row][col] = client;
+        clientList.add(client);
+        try {
+			client.setZone(this);
+		} catch (RemoteException e2) {
+			CLIMessage.DisplayMessage("Unable to set zone to client", false);
+		}
+        try {
+			client.setCoordinates(row, col);
+		} catch (RemoteException e1) {
+			CLIMessage.DisplayMessage("Unable to set coordinates to client", false);
+		}
+        try {
+			client.recieveUpdatedMap(GenerateUpdatedMapString());
+		} catch (RemoteException e) {
+			CLIMessage.DisplayMessage("Unable to generate map for client", false);
+		}
+        CLIMessage.DisplayMessage("Registered client", false);
+        broadcastMap(client);
+        releaseLock();
+    }
+    /**
+     * Remove the registered client from the zone
+     * @param client
+     */
+    public void unregister(IClient client) {
+    	
+    		int xCoordinate;
+			try {
+				xCoordinate = client.getX();
+				int yCoordinate = client.getY();
+				board[yCoordinate][xCoordinate] = null;
+				CLIMessage.DisplayMessage("||Player "+(char)client.getID()+ " has left the game.||", false);
+			} catch (RemoteException e) {
+				CLIMessage.printError("Connection has been lost with a client", false);
+			}
+    		
+    	
+        clientList.remove(client);
+        broadcastMap(client);
+        
+    }
+    
+    private void unregisterDisconnectedUser(IClient client , int row , int col) {
+		CLIMessage.DisplayMessage("Unable to communicate with client. Unregistering client...", false);
+    	if(clientList.contains(client)) {
+    		clientList.remove(client);
+    	}
+    	
+    	board[row][col] = null;
+    	broadcastMap(client);
+    }
+    
+    public void placePlayer(IClient client, int y, int x) throws RemoteException{
+	
+		acquireBoardLock();
+        board[y][x] = client;
+        releaseLock();
+    }
+    //================================ZONE LOGIC & MOVEMENT===========================================
+    /**
+     * Recieve a direction request and update the user with the update
+     * @param client
+     * @param direction
+     * @return
+     */
+   
+    private String GenerateUpdatedMapString() {
+		String generatedMap = "";
+		for (int i = 0; i < N; i++) {     
+            for (int j = 0 ;j < N; j++) {
+                    if(board[i][j] == null)
+                    	generatedMap+="0 ";
+					else
+						try {
+							generatedMap+=((char)board[i][j].getID())+" ";
+						} catch (RemoteException e) {
+							generatedMap+="? ";
+							unregisterDisconnectedUser(board[i][j], i, j);
+						}
+                } 
+            if(i != N-1)
+            	generatedMap+= "= ";
+        }
+        generatedMap.replace("\t", "");
+        return generatedMap;	
+	}
+   
+
+    private boolean playerCanMove(int row , int col){
+    	if(board[row][col] == null) {
+    		return true;
+    	}
+		return false;
+ 
+    }
+
+    /***
+     * 
+     * @param col target col  
+     * @param row target row
+     * @param targetZone 
+     * @param client
+     * @param direction direction of zone
+     * @return
+     */
+    private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client , Player.Direction direction){
+    	CLIMessage.DisplayMessage("Attempting to move to new zone", false);
+    	//attempt to check if the cell is free
+    	try {
+			if(!targetZone.cellIsEmpty(row, col)) {
+				
+				releaseLock();
+
+				return "";
+			}
+		} catch (RemoteException | NullPointerException ex) {
+			//Handle unavailable zones based on the direction the user is taking
+			switch (direction) {
+			case LEFT: 
+				targetZone = connectToNewZone(-1);
+				zoneLeft = targetZone;
+				break;
+				
+			case RIGHT: 
+				targetZone = connectToNewZone(1);
+				zoneRight = targetZone;
+				break;
+			case UP: 
+				targetZone = connectToNewZone(-ZONES_PER_ROW);
+				zoneUp = targetZone;
+				break;
+			case DOWN: 
+				targetZone = connectToNewZone(ZONES_PER_ROW);
+				zoneDown = targetZone;
+				break;
+			
+			default:
+				releaseLock();
+				return "";
+			}
+		}
+    	//If there is no new zone, then return null and do nothing
+    	if(targetZone == null) {
+	       releaseLock();
+    		return "";
+    	}
+		try {
+			if(!targetZone.cellIsEmpty(row, col)) {
+				releaseLock();
+				return "";
+			}
+		} catch (RemoteException e2) {
+			//If the newly connected zone disconnects, then just return an empty string
+			CLIMessage.printError("Cannot communicate with target zone", false);
+			releaseLock();
+			return "";
+		}
+    	unregister(client);
+    	try {
+			targetZone.register(client , row , col);
+			targetZone.placePlayer(client, row, col); // Move to the new zone
+		} catch (RemoteException e1) {
+			CLIMessage.DisplayMessage("ERROR:Cannot communicate with target zone", false);
+			releaseLock();
+			return "";
+		}
+        try {
+			client.setZone(targetZone); // Set client's new zone to target zone
+			CLIMessage.DisplayMessage("*Player left the zone, broadcasting updated map", false);
+			//Broadcast the map first to avoid erasing the messages
+			broadcastMap(client);
+			sendMessageToNeighbors(row , col, client);
+			releaseLock();
+			return "";
+		} catch (RemoteException e) {
+			unregisterDisconnectedUser(client, row, col);
+			releaseLock();
+		}
+		return ""; 
+    }
+    	
+
+    
     //===========================================================================
     private void sendMessageToNeighbors(int row, int col , IClient sender) {
 
@@ -423,7 +449,7 @@ public class Zone implements IZone{
     		}
     	}
     }
-    //===========================================================================
+    
     private void broadcastMap(IClient movingClient) {
     	String map = GenerateUpdatedMapString();
     	
@@ -438,17 +464,19 @@ public class Zone implements IZone{
 	
     	
     }
-    //===========================================================================
+    
     private String updateBoard(IClient client , int prevRow, int prevCol , int newRow, int newCol) {
         board[prevRow][prevCol] = null;
         board[newRow][newCol] = client;
     
         broadcastMap(client);
 		sendMessageToNeighbors(newRow, newCol , client);
-	
+		
+		//release lock when placing the neighbor and sending the updated map to the players
+		releaseLock();
     	return GenerateUpdatedMapString();
     }
-    //===========================================================================
+    
 	@Override
 	public String movePlayer(IClient client, Player.Direction direction) throws RemoteException{
         int xCoordinate = client.getX();
@@ -457,6 +485,9 @@ public class Zone implements IZone{
         String eventPrefix = "# Player "+(char)client.getID();
         
         CLIMessage.DisplayMessage(eventPrefix+" requested movement", false);
+		
+		acquireBoardLock();
+	
         int yUpdated;
         int xUpdated;
         switch(direction){
@@ -467,8 +498,12 @@ public class Zone implements IZone{
                     
                 }
                 else{ 
-                    if(!playerCanMove(yUpdated, xCoordinate))
-                        return "";
+                    if(!playerCanMove(yUpdated, xCoordinate)) {
+                    	releaseLock();
+                    	return "";
+                    	
+                    }
+                    	
                     else{
 
                         CLIMessage.DisplayMessage(eventPrefix+" moved up", false);
@@ -483,8 +518,11 @@ public class Zone implements IZone{
                 }
                 else{
                 
-                    if(!playerCanMove(yUpdated, xCoordinate))
-                        return "";
+                    if(!playerCanMove(yUpdated, xCoordinate)){
+                    	releaseLock();
+                    	return "";
+                    	
+                    }
                     else{
                         CLIMessage.DisplayMessage(eventPrefix+" moved down", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yUpdated, xCoordinate);
@@ -498,8 +536,11 @@ public class Zone implements IZone{
                 }
                 else
                 {
-	                if(!playerCanMove(yCoordinate, xUpdated))
-	                    return "";
+	                if(!playerCanMove(yCoordinate, xUpdated)){
+	                	releaseLock();
+                    	return "";
+                    	
+                    }
 	                else{
 	                    CLIMessage.DisplayMessage(eventPrefix+" moved left", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
@@ -512,8 +553,11 @@ public class Zone implements IZone{
                 }
                 else
                 {
-	                if(!playerCanMove(yCoordinate, xUpdated))
-	                    return "";
+	                if(!playerCanMove(yCoordinate, xUpdated)){
+	                	releaseLock();
+                    	return "";
+                    	
+                    }
 	                else{
 	                    CLIMessage.DisplayMessage(eventPrefix+" moved right", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
@@ -521,6 +565,7 @@ public class Zone implements IZone{
                 }
             default:
             	 CLIMessage.DisplayMessage(eventPrefix+" requested invalid movment", false);
+        		releaseLock();
                 return "";
         }
     }
@@ -607,6 +652,18 @@ public class Zone implements IZone{
 		return map;
 	}
 
+	private void acquireBoardLock() {
+		try {
+			boardLock.acquire();
+			CLIMessage.DisplayMessage("Lock acquired", false);
+		} catch (InterruptedException e) {
+	
+		}
+	}
+	private void releaseLock() {
+		boardLock.release();
+		CLIMessage.DisplayMessage("Lock released", false);
+	}
 
 
 
