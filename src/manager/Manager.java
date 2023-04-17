@@ -10,7 +10,6 @@ import java.util.List;
 
 import shared.common.AppConfig;
 import shared.common.CLIMessage;
-import shared.common.Message;
 import shared.remote_objects.IClient;
 import shared.remote_objects.IManager;
 import shared.remote_objects.IZone;
@@ -69,10 +68,9 @@ public class Manager implements IManager {
 	public int register(IClient client){
 
 		connectedClients.add(client);
-		Message message = new Message("Manager" , "Welcome!");
 		CLIMessage.DisplayMessage("New user registered", false);
 
-		sendMessage(client , message.toString());
+		sendMessage(client , "Welcome");
 		CLIMessage.DisplayMessage("Current connected clients "+connectedClients.size(), false);
 //
 
@@ -183,12 +181,12 @@ public class Manager implements IManager {
     //===========================================================================
 	@Override
 	public String getAvaialbeZones() throws RemoteException {
-		Message zoneSelectionMessage = new Message("Manager" , "===============[Zone-select]=============== \n"
+		String zoneSelectionMessage = "===============[Zone-select]=============== \n"
 				+ "Please select a zone number from the following range\n"
 				+ "Zones available: " + (NUMBER_OF_ZONES) + "\n"
-				+ "Range: 0 - "+(NUMBER_OF_ZONES));
+				+ "Range: 0 - "+(NUMBER_OF_ZONES);
 
-		return zoneSelectionMessage.toString();
+		return zoneSelectionMessage;
 	}
     //===========================================================================
 

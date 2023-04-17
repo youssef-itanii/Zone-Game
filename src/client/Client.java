@@ -105,11 +105,11 @@ public class Client implements IClient{
     //===========================================================================
 	public void unregister() {
 		try {
-			manager.unregister(this);
-
+			zone.unregister(this);
+			CLIMessage.DisplayMessage("Disconnection successful.", false);
 		} catch (RemoteException e) {
 
-			CLIMessage.DisplayMessage("Unable to unregister client", true);
+			CLIMessage.printError("Unable to unregister from zone due to loss of connection. Logging out", true);
 
 
 		}

@@ -14,9 +14,5 @@ public class Main {
 		player.start();
 
 
-
-		player.logout();
-
-
 	}
 }
