@@ -3,8 +3,6 @@ package shared.remote_objects;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-import shared.common.Message;
-
 
 public interface IClient extends Remote{
 

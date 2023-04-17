@@ -17,10 +17,9 @@ public class Player {
 		DR, 	//Diagonal: Down Right
 		DL		//Diagonal: Down Left
 	}
-	private String OTHER_PLAYER = "\u001B[1;47m\u001B[1;31mP\u001B[0m\u001B[0m";
+
 	private String DARK_AREA = "\u001B[1;40m \u001B[0m";
 	private String LIGHT_AREA = "\u001B[1;47m \u001B[0m";
-	private String YOU = "\u001B[1;47m\u001B[1;32mU\u001B[0m\u001B[0m";
 	public int x = -1;
 	public int y = -1;
 	public String map = "";
@@ -65,21 +64,42 @@ public class Player {
 		//Take in movement input
 		scanner = new Scanner(System.in);
 		String input = "";
-		while(!input.equals("exit")) {
-			System.out.println("Enter direction to move");
+		while(true) {
+			System.out.println("Enter command");
 			 input = scanner.nextLine();  // Read user input
 			 if(input.contains("/map")){
 				 client.requestZonesMap();
 				 continue;
+			 }
+			 if(input.contains("/help")) {
+				 displayHelpMessage();
+				 continue;
+			 }
+			 if(input.contains("/logout")){
+				 logout();
 			 }
 			 boolean moved = move(input);
 			 if(moved) displayMap();
 			 else {
 				 System.out.println("\u001B[31mInvalid input: Try again.\u001B[0m");
 			 }
+			 input = "";
 		}
 	}
-
+	public void displayHelpMessage() {
+		String helpMessage = "===========HELP===========\n"
+				+ "==MOVEMENT==\n"
+				+ " - Moving up: '"+UP+"'\n"
+				+ " - Moving down: '"+DOWN+"'\n"
+				+ " - Moving right: '"+RIGHT+"'\n"
+				+ " - Moving left: '"+LEFT+"'\n"
+				+ "\n\n"
+				+ "==COMMANDS==\n"
+				+ "	- Display help message: '\\help'\n"
+				+ " - Display map of Zones: '\\map'\n"
+				+ " - Logout: '\\logout'\n";
+		CLIMessage.DisplayMessage(helpMessage,false);
+	}
 	//=============================================================================================
 	public void addNewMessage(String message) {
 		messages.add(message);

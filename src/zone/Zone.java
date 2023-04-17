@@ -69,6 +69,9 @@ public class Zone implements IZone{
         //Set up connections with the left and upper zones
         connectToPreviousZones();
      
+        
+    	CLIMessage.DisplayMessage("=======================\n"
+    			+ "|||ZONE IS READY|||\n", false);
     }
 
     private void initZoneConfig() {
@@ -112,12 +115,12 @@ public class Zone implements IZone{
 				CLIMessage.DisplayMessage("Binded Zone-"+ID, false);
 
 			} catch (AlreadyBoundException e) {
-				 CLIMessage.DisplayMessage("Unable to bind zone to registry", true);
+				 CLIMessage.printError("Unable to bind zone to registry", true);
 			}
         } catch (RemoteException e) {
-            CLIMessage.DisplayMessage("Unable to register zone", true);
+            CLIMessage.printError("Unable to register zone", true);
         } catch (NotBoundException e) {
-            CLIMessage.DisplayMessage("Unable to locate Manager in registry for zone", true);
+            CLIMessage.printError("Unable to locate Manager in registry for zone", true);
         }
     }
     //===========================================================================
@@ -180,8 +183,9 @@ public class Zone implements IZone{
 				xCoordinate = client.getX();
 				int yCoordinate = client.getY();
 				board[yCoordinate][xCoordinate] = null;
+				CLIMessage.DisplayMessage("||Player "+(char)client.getID()+ " has left the game.||", false);
 			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Connection has been lost with a client", false);
+				CLIMessage.printError("Connection has been lost with a client", false);
 			}
     		
     	
@@ -282,7 +286,7 @@ public class Zone implements IZone{
 			}
 		} catch (RemoteException e2) {
 			//If the newly connected zone disconnects, then just return an empty string
-			CLIMessage.DisplayMessage("ERROR: Cannot communicate with target zone", false);
+			CLIMessage.printError("Cannot communicate with target zone", false);
 			return "";
 		}
     	unregister(client);
@@ -339,15 +343,15 @@ public class Zone implements IZone{
     		
 				try {
 					newZone = (IZone) registry.lookup("Zone-"+currentIndex);
-					CLIMessage.DisplayMessage("ERROR: Attempting to check Zone-"+currentIndex,false);
+					CLIMessage.printError("Attempting to check Zone-"+currentIndex,false);
 				} catch (AccessException e1) {
-					CLIMessage.DisplayMessage("ERROR: Unable to access registery", false);
+					CLIMessage.printError("Unable to access registery", false);
 					return null;
 				} catch (RemoteException e1) {
-					CLIMessage.DisplayMessage("ERROR: Unable to communicate with registery", false);
+					CLIMessage.printError("Unable to communicate with registery", false);
 					return null;
 				} catch (NotBoundException e1) {
-					CLIMessage.DisplayMessage("ERROR: Zone-"+currentIndex+" is not bound",false);
+					CLIMessage.printError("Zone-"+currentIndex+" is not bound",false);
 					continue;
 				}
 			
@@ -364,12 +368,12 @@ public class Zone implements IZone{
 				CLIMessage.DisplayMessage("\n==========================================", false);
 				return newZone;
 			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("ERROR: Unable to communicate with Zone-"+currentIndex, false);
+				CLIMessage.printError("Unable to communicate with Zone-"+currentIndex, false);
 				CLIMessage.DisplayMessage("\n==========================================", false);
 				newZone = null;
 			}
     	}
-    	System.out.println("FAIL: No zone found");
+    	CLIMessage.printError("No zone found" , false);
     	CLIMessage.DisplayMessage("\n==========================================", false);
     	return null;    
 
@@ -428,7 +432,7 @@ public class Zone implements IZone{
     			if(client.equals(movingClient)) continue;
     			client.recieveUpdatedMap(map);
 			} catch (RemoteException e) {
-				CLIMessage.DisplayMessage("Unable to send message to neighboring client", false);
+				CLIMessage.printError("Unable to send message to neighboring client", false);
 			}
     	}
 	
