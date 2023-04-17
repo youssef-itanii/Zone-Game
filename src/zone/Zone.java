@@ -40,7 +40,7 @@ public class Zone implements IZone{
     private int ZONES_PER_ROW;
     private Registry registry;
     private int index;
-    //===========================================================================
+    //============================ZONE INITIALIZATION===============================================
     public Zone() {
     	try {
 			UnicastRemoteObject.exportObject(this , 0);
@@ -75,7 +75,7 @@ public class Zone implements IZone{
     	CLIMessage.DisplayMessage("=======================\n"
     			+ "|||ZONE IS READY|||\n", false);
     }
-
+    
     private void initZoneConfig() {
     	N = AppConfig.getZoneSize();
     	MAX_ZONES = AppConfig.getNumberOfZones();
@@ -103,7 +103,73 @@ public class Zone implements IZone{
 		zoneLeft = connectToNewZone(-1);
 		zoneUp = connectToNewZone(-ZONES_PER_ROW);
     }
-    //===========================================================================
+    /***
+     * Searches for the next available zone to connect to
+     * @param offset: offset required to increment the index 
+     * @return
+     */
+    private IZone connectToNewZone(int offset) {
+    	
+    	IZone newZone = null;
+    	int currentIndex = index;
+    	CLIMessage.DisplayMessage("\n==========================================", false);
+    	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
+    	
+    	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
+    		currentIndex+= offset;
+    		boolean isNewRow;
+    		boolean isPreviousRow;
+    		if(currentIndex == 0) {
+    			isPreviousRow = false;
+    			isNewRow = false;
+    			
+    		}
+    		else {
+    			isPreviousRow = ZONES_PER_ROW%(currentIndex + 1) == 0; 
+    			isNewRow = ZONES_PER_ROW%(currentIndex) == 0 && index != 0;    			
+    		}
+    		if(offset == 1 && isNewRow) return null;
+        	if(offset == -1 && isPreviousRow) return null;
+    	
+    		
+				try {
+					newZone = (IZone) registry.lookup("Zone-"+currentIndex);
+					CLIMessage.printError("Attempting to check Zone-"+currentIndex,false);
+				} catch (AccessException e1) {
+					CLIMessage.printError("Unable to access registery", false);
+					return null;
+				} catch (RemoteException e1) {
+					CLIMessage.printError("Unable to communicate with registery", false);
+					return null;
+				} catch (NotBoundException e1) {
+					CLIMessage.printError("Zone-"+currentIndex+" is not bound",false);
+					continue;
+				}
+			
+    	  		
+    		try {
+    			if(newZone == null) {
+    				CLIMessage.DisplayMessage(" NULL: Zone-"+currentIndex,false);
+    				continue;
+    			}
+    			//To make sure that the zone is still active, try getting the ID
+				int zoneId = newZone.getID();
+//				if(newZone.equals(zoneDown) || newZone.equals(zoneRight)) return null;
+				CLIMessage.DisplayMessage("*Connecting to Zone-"+currentIndex,false);
+				CLIMessage.DisplayMessage("\n==========================================", false);
+				return newZone;
+			} catch (RemoteException e) {
+				CLIMessage.printError("Unable to communicate with Zone-"+currentIndex, false);
+				CLIMessage.DisplayMessage("\n==========================================", false);
+				newZone = null;
+			}
+    	}
+    	CLIMessage.printError("No zone found" , false);
+    	CLIMessage.DisplayMessage("\n==========================================", false);
+    	return null;    
+
+    }
+    //===========================REGISTRATION================================================
     /**
      * Register zone in the Manager node and binds the zone to the registry
      */
@@ -125,7 +191,6 @@ public class Zone implements IZone{
             CLIMessage.printError("Unable to locate Manager in registry for zone", true);
         }
     }
-    //===========================================================================
     /***
      * Sets position of the zone in the zone array stored in the manager
      */
@@ -135,7 +200,6 @@ public class Zone implements IZone{
 		CLIMessage.DisplayMessage("Index set "+index, false);
 	}
 	
-    //===========================================================================
     /**
      * Add client to a zone
      */
@@ -177,7 +241,6 @@ public class Zone implements IZone{
         broadcastMap(client);
         releaseLock();
     }
-    //===========================================================================
     /**
      * Remove the registered client from the zone
      * @param client
@@ -209,15 +272,14 @@ public class Zone implements IZone{
     	board[row][col] = null;
     	broadcastMap(client);
     }
-    //===========================================================================
+    
     public void placePlayer(IClient client, int y, int x) throws RemoteException{
 	
 		acquireBoardLock();
-	
         board[y][x] = client;
         releaseLock();
     }
-    //===========================================================================
+    //================================ZONE LOGIC & MOVEMENT===========================================
     /**
      * Recieve a direction request and update the user with the update
      * @param client
@@ -246,7 +308,6 @@ public class Zone implements IZone{
         return generatedMap;	
 	}
    
-    //===========================================================================
 
     private boolean playerCanMove(int row , int col){
     	if(board[row][col] == null) {
@@ -255,7 +316,16 @@ public class Zone implements IZone{
 		return false;
  
     }
-    //===========================================================================
+
+    /***
+     * 
+     * @param col target col  
+     * @param row target row
+     * @param targetZone 
+     * @param client
+     * @param direction direction of zone
+     * @return
+     */
     private String movePlayerToNewZone(int col , int row , IZone targetZone, IClient client , Player.Direction direction){
     	CLIMessage.DisplayMessage("Attempting to move to new zone", false);
     	//attempt to check if the cell is free
@@ -333,73 +403,7 @@ public class Zone implements IZone{
     }
     	
 
-    //===========================================================================
-    /***
-     * Searches for the next available zone to connect to
-     * @param offset: offset required to increment the index 
-     * @return
-     */
-    private IZone connectToNewZone(int offset) {
-    	
-    	IZone newZone = null;
-    	int currentIndex = index;
-    	CLIMessage.DisplayMessage("\n==========================================", false);
-    	CLIMessage.DisplayMessage("Searching for new zone to connect to", false);
-    	
-    	while((currentIndex +offset >= 0 && currentIndex+offset < MAX_ZONES)) {
-    		currentIndex+= offset;
-    		boolean isNewRow;
-    		boolean isPreviousRow;
-    		if(currentIndex == 0) {
-    			isPreviousRow = false;
-    			isNewRow = false;
-    			
-    		}
-    		else {
-    			isPreviousRow = ZONES_PER_ROW%(currentIndex + 1) == 0; 
-    			isNewRow = ZONES_PER_ROW%(currentIndex) == 0 && index != 0;    			
-    		}
-    		if(offset == 1 && isNewRow) return null;
-        	if(offset == -1 && isPreviousRow) return null;
-    	
-    		
-				try {
-					newZone = (IZone) registry.lookup("Zone-"+currentIndex);
-					CLIMessage.printError("Attempting to check Zone-"+currentIndex,false);
-				} catch (AccessException e1) {
-					CLIMessage.printError("Unable to access registery", false);
-					return null;
-				} catch (RemoteException e1) {
-					CLIMessage.printError("Unable to communicate with registery", false);
-					return null;
-				} catch (NotBoundException e1) {
-					CLIMessage.printError("Zone-"+currentIndex+" is not bound",false);
-					continue;
-				}
-			
-    	  		
-    		try {
-    			if(newZone == null) {
-    				CLIMessage.DisplayMessage(" NULL: Zone-"+currentIndex,false);
-    				continue;
-    			}
-    			//To make sure that the zone is still active, try getting the ID
-				int zoneId = newZone.getID();
-//				if(newZone.equals(zoneDown) || newZone.equals(zoneRight)) return null;
-				CLIMessage.DisplayMessage("*Connecting to Zone-"+currentIndex,false);
-				CLIMessage.DisplayMessage("\n==========================================", false);
-				return newZone;
-			} catch (RemoteException e) {
-				CLIMessage.printError("Unable to communicate with Zone-"+currentIndex, false);
-				CLIMessage.DisplayMessage("\n==========================================", false);
-				newZone = null;
-			}
-    	}
-    	CLIMessage.printError("No zone found" , false);
-    	CLIMessage.DisplayMessage("\n==========================================", false);
-    	return null;    
-
-    }
+    
     //===========================================================================
     private void sendMessageToNeighbors(int row, int col , IClient sender) {
 
@@ -445,7 +449,7 @@ public class Zone implements IZone{
     		}
     	}
     }
-    //===========================================================================
+    
     private void broadcastMap(IClient movingClient) {
     	String map = GenerateUpdatedMapString();
     	
@@ -460,17 +464,19 @@ public class Zone implements IZone{
 	
     	
     }
-    //===========================================================================
+    
     private String updateBoard(IClient client , int prevRow, int prevCol , int newRow, int newCol) {
         board[prevRow][prevCol] = null;
         board[newRow][newCol] = client;
     
         broadcastMap(client);
 		sendMessageToNeighbors(newRow, newCol , client);
+		
+		//release lock when placing the neighbor and sending the updated map to the players
 		releaseLock();
     	return GenerateUpdatedMapString();
     }
-    //===========================================================================
+    
 	@Override
 	public String movePlayer(IClient client, Player.Direction direction) throws RemoteException{
         int xCoordinate = client.getX();
@@ -651,8 +657,7 @@ public class Zone implements IZone{
 			boardLock.acquire();
 			CLIMessage.DisplayMessage("Lock acquired", false);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	
 		}
 	}
 	private void releaseLock() {

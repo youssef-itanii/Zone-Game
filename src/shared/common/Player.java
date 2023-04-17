@@ -2,6 +2,7 @@ package shared.common;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import client.Client;
@@ -86,6 +87,33 @@ public class Player {
 			 input = "";
 		}
 	}
+	
+	public void autoRun() {
+		clearScreen();
+		
+		//Request selection of zone
+		requestAvaialableZones();
+		
+		//Display map of zone you are registered too
+		displayMap();
+		
+		String[] movements = {UP , DOWN, LEFT , RIGHT};
+		Random rand = new Random();
+		while(true) {
+			
+			String randMovement = movements[rand.nextInt(4)];
+			 boolean moved = move(randMovement);
+			 if(moved) displayMap();
+			 try {
+				Thread.sleep(rand.nextInt(10)*100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+//				e.printStackTrace();
+			}
+			 
+		}
+	}
+	
 	public void displayHelpMessage() {
 		String helpMessage = "===========HELP===========\n"
 				+ "==MOVEMENT==\n"
