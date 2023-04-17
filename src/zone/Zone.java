@@ -17,6 +17,7 @@ import shared.common.Player;
 import shared.remote_objects.IClient;
 
 import java.util.Random;
+import java.util.concurrent.Semaphore;
 
 
 public class Zone implements IZone{
@@ -25,7 +26,7 @@ public class Zone implements IZone{
     private IZone zoneDown;
     private IZone zoneLeft;
     private IZone zoneRight;
- 
+    private Semaphore boardLock;
     private List<IClient> clientList;
     private IClient[][] board;
     private IManager manager;
@@ -68,7 +69,8 @@ public class Zone implements IZone{
         
         //Set up connections with the left and upper zones
         connectToPreviousZones();
-     
+        
+        this.boardLock = new Semaphore(1);
         
     	CLIMessage.DisplayMessage("=======================\n"
     			+ "|||ZONE IS READY|||\n", false);
@@ -140,6 +142,9 @@ public class Zone implements IZone{
 	@Override
     public void register(IClient client , int row , int col) {
 		//If the row and column were not set, select a random location
+
+		acquireBoardLock();
+
 		if(row == -1 || col == -1) {
 			Random rand = new Random();
 			
@@ -170,6 +175,7 @@ public class Zone implements IZone{
 		}
         CLIMessage.DisplayMessage("Registered client", false);
         broadcastMap(client);
+        releaseLock();
     }
     //===========================================================================
     /**
@@ -205,7 +211,11 @@ public class Zone implements IZone{
     }
     //===========================================================================
     public void placePlayer(IClient client, int y, int x) throws RemoteException{
+	
+		acquireBoardLock();
+	
         board[y][x] = client;
+        releaseLock();
     }
     //===========================================================================
     /**
@@ -251,6 +261,9 @@ public class Zone implements IZone{
     	//attempt to check if the cell is free
     	try {
 			if(!targetZone.cellIsEmpty(row, col)) {
+				
+				releaseLock();
+
 				return "";
 			}
 		} catch (RemoteException | NullPointerException ex) {
@@ -275,18 +288,24 @@ public class Zone implements IZone{
 				break;
 			
 			default:
+				releaseLock();
 				return "";
 			}
 		}
     	//If there is no new zone, then return null and do nothing
-    	if(targetZone == null) return "";
+    	if(targetZone == null) {
+	       releaseLock();
+    		return "";
+    	}
 		try {
 			if(!targetZone.cellIsEmpty(row, col)) {
+				releaseLock();
 				return "";
 			}
 		} catch (RemoteException e2) {
 			//If the newly connected zone disconnects, then just return an empty string
 			CLIMessage.printError("Cannot communicate with target zone", false);
+			releaseLock();
 			return "";
 		}
     	unregister(client);
@@ -295,6 +314,7 @@ public class Zone implements IZone{
 			targetZone.placePlayer(client, row, col); // Move to the new zone
 		} catch (RemoteException e1) {
 			CLIMessage.DisplayMessage("ERROR:Cannot communicate with target zone", false);
+			releaseLock();
 			return "";
 		}
         try {
@@ -303,9 +323,11 @@ public class Zone implements IZone{
 			//Broadcast the map first to avoid erasing the messages
 			broadcastMap(client);
 			sendMessageToNeighbors(row , col, client);
+			releaseLock();
 			return "";
 		} catch (RemoteException e) {
 			unregisterDisconnectedUser(client, row, col);
+			releaseLock();
 		}
 		return ""; 
     }
@@ -445,7 +467,7 @@ public class Zone implements IZone{
     
         broadcastMap(client);
 		sendMessageToNeighbors(newRow, newCol , client);
-	
+		releaseLock();
     	return GenerateUpdatedMapString();
     }
     //===========================================================================
@@ -457,6 +479,9 @@ public class Zone implements IZone{
         String eventPrefix = "# Player "+(char)client.getID();
         
         CLIMessage.DisplayMessage(eventPrefix+" requested movement", false);
+		
+		acquireBoardLock();
+	
         int yUpdated;
         int xUpdated;
         switch(direction){
@@ -467,8 +492,12 @@ public class Zone implements IZone{
                     
                 }
                 else{ 
-                    if(!playerCanMove(yUpdated, xCoordinate))
-                        return "";
+                    if(!playerCanMove(yUpdated, xCoordinate)) {
+                    	releaseLock();
+                    	return "";
+                    	
+                    }
+                    	
                     else{
 
                         CLIMessage.DisplayMessage(eventPrefix+" moved up", false);
@@ -483,8 +512,11 @@ public class Zone implements IZone{
                 }
                 else{
                 
-                    if(!playerCanMove(yUpdated, xCoordinate))
-                        return "";
+                    if(!playerCanMove(yUpdated, xCoordinate)){
+                    	releaseLock();
+                    	return "";
+                    	
+                    }
                     else{
                         CLIMessage.DisplayMessage(eventPrefix+" moved down", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yUpdated, xCoordinate);
@@ -498,8 +530,11 @@ public class Zone implements IZone{
                 }
                 else
                 {
-	                if(!playerCanMove(yCoordinate, xUpdated))
-	                    return "";
+	                if(!playerCanMove(yCoordinate, xUpdated)){
+	                	releaseLock();
+                    	return "";
+                    	
+                    }
 	                else{
 	                    CLIMessage.DisplayMessage(eventPrefix+" moved left", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
@@ -512,8 +547,11 @@ public class Zone implements IZone{
                 }
                 else
                 {
-	                if(!playerCanMove(yCoordinate, xUpdated))
-	                    return "";
+	                if(!playerCanMove(yCoordinate, xUpdated)){
+	                	releaseLock();
+                    	return "";
+                    	
+                    }
 	                else{
 	                    CLIMessage.DisplayMessage(eventPrefix+" moved right", false);
                         return updateBoard(client , yCoordinate , xCoordinate , yCoordinate, xUpdated);
@@ -521,6 +559,7 @@ public class Zone implements IZone{
                 }
             default:
             	 CLIMessage.DisplayMessage(eventPrefix+" requested invalid movment", false);
+        		releaseLock();
                 return "";
         }
     }
@@ -607,6 +646,19 @@ public class Zone implements IZone{
 		return map;
 	}
 
+	private void acquireBoardLock() {
+		try {
+			boardLock.acquire();
+			CLIMessage.DisplayMessage("Lock acquired", false);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	private void releaseLock() {
+		boardLock.release();
+		CLIMessage.DisplayMessage("Lock released", false);
+	}
 
 
 
