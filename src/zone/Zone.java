@@ -40,6 +40,7 @@ public class Zone implements IZone{
     private int ZONES_PER_ROW;
     private Registry registry;
     private int index;
+    private int currentPlayers = 0;
     //============================ZONE INITIALIZATION===============================================
     public Zone() {
     	try {
@@ -208,7 +209,15 @@ public class Zone implements IZone{
 		//If the row and column were not set, select a random location
 
 		acquireBoardLock();
-
+		if(clientList.size() == N*N) {
+			releaseLock();
+			try {
+				client.recieveMessage("Cannot register you to the zone, zone is full.", "Zone-"+ID);
+			} catch (RemoteException e) {
+				return;
+			}
+			return;
+		}
 		if(row == -1 || col == -1) {
 			Random rand = new Random();
 			
@@ -239,6 +248,7 @@ public class Zone implements IZone{
 		}
         CLIMessage.DisplayMessage("Registered client", false);
         broadcastMap(client);
+        currentPlayers++;
         releaseLock();
     }
     /**
@@ -257,7 +267,7 @@ public class Zone implements IZone{
 				CLIMessage.printError("Connection has been lost with a client", false);
 			}
     		
-    	
+	
         clientList.remove(client);
         broadcastMap(client);
         
@@ -268,7 +278,7 @@ public class Zone implements IZone{
     	if(clientList.contains(client)) {
     		clientList.remove(client);
     	}
-    	
+
     	board[row][col] = null;
     	broadcastMap(client);
     }
@@ -310,10 +320,7 @@ public class Zone implements IZone{
    
 
     private boolean playerCanMove(int row , int col){
-    	if(board[row][col] == null) {
-    		return true;
-    	}
-		return false;
+    	return cellIsEmpty(row, col);
  
     }
 
@@ -577,8 +584,18 @@ public class Zone implements IZone{
 	}
     //===========================================================================
 	@Override
-	public boolean cellIsEmpty(int row, int col) throws RemoteException {
-		return board[row][col] == null;
+	public boolean cellIsEmpty(int row, int col) {
+		if(board[row][col] != null) {
+			try {
+				int clientID = board[row][col].getID();
+				return false;
+			} catch (RemoteException e) {
+				CLIMessage.printError("Player in this cell did not respond, removing", false);
+				unregisterDisconnectedUser(board[row][col], row, col);
+				return true;
+			}
+		}
+		return true;
 	}
 
 	@Override
